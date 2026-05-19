@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #EF7622;
+  --color-secondary: #00ACC1;
+  --color-accent: #8D6E63;
+  --color-bg-light: #FFF8E1;
+  --color-dark: #3E2723;
+  
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-script: var(--font-pacifico), cursive;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  .btn-primary {
+    @apply bg-primary hover:scale-[1.02] active:scale-[0.98] text-white font-black py-3 px-6 rounded-2xl shadow-lg shadow-primary/20 transition-all duration-300 uppercase text-[10px] tracking-widest;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:scale-[1.02] active:scale-[0.98] text-white font-black py-3 px-6 rounded-2xl shadow-lg shadow-secondary/20 transition-all duration-300 uppercase text-[10px] tracking-widest;
+  }
+
+  .card {
+    @apply bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[32px] shadow-xl shadow-gray-200/50 p-8;
+  }
+
+  .input-field {
+    @apply w-full p-4 rounded-2xl border border-zinc-100 bg-gray-50/50 focus:ring-4 focus:ring-primary/10 focus:bg-white outline-none transition-all font-medium text-sm;
+  }
+}
+
+/* Print Styles */
+@media print {
+  /* Hide everything except the printable content */
+  body * {
+    visibility: hidden;
+  }
+
+  .printable,
+  .printable * {
+    visibility: visible !important;
+  }
+
+  .printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* ===== THERMAL 80mm RECEIPT (Epson TM-T20IV / ESC-POS USB) ===== */
+  .terminal-ticket {
+    width: 72mm !important;  /* 80mm paper - margins */
+    max-width: 72mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    font-family: 'Courier New', 'Lucida Console', monospace !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    color: #000 !important;
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .terminal-ticket * {
+    font-family: 'Courier New', 'Lucida Console', monospace !important;
+    color: #000 !important;
+  }
+
+  .terminal-ticket .text-lg { font-size: 14px !important; }
+  .terminal-ticket .text-base { font-size: 12px !important; }
+  .terminal-ticket .text-sm { font-size: 11px !important; }
+  .terminal-ticket .text-xs,
+  .terminal-ticket .text-\[10px\] { font-size: 10px !important; }
+  .terminal-ticket .text-\[8px\],
+  .terminal-ticket .text-\[9px\] { font-size: 9px !important; }
+
+  /* Force black text, no colors */
+  .terminal-ticket .text-green-600,
+  .terminal-ticket .text-primary,
+  .terminal-ticket .text-gray-400,
+  .terminal-ticket .text-gray-500 {
+    color: #000 !important;
+  }
+
+  .terminal-ticket .opacity-40,
+  .terminal-ticket .opacity-60 {
+    opacity: 1 !important;
+  }
+
+  /* Dashed borders for receipt separators */
+  .terminal-ticket .border-dashed {
+    border-style: dashed !important;
+    border-color: #000 !important;
+  }
+
+  /* ===== A4 DOCUMENT (Registration Card / Folio / Invoice) ===== */
+  .a4-document {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 15mm !important;
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+}
