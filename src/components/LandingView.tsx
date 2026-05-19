@@ -344,20 +344,10 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
           Si la API no tiene match, la card se muestra sin link a reserva. */}
       <RoomsSection lang={lang} t={t} initialContent={initialContent} rooms={rooms} />
 
-      {/* Información para tu estadía */}
-      {(initialContent.stayInfo?.length ?? 0) > 0 && (
-        <StayInfoSection lang={lang} initialContent={initialContent} />
-      )}
-
-      {/* Cómo llegar */}
-      {(lang === 'es' ? initialContent.howToArrive_es : initialContent.howToArrive_en) && (
-        <HowToArriveSection lang={lang} initialContent={initialContent} />
-      )}
-
-      {/* Políticas de cancelación */}
-      {((lang === 'es' ? initialContent.cancellation_es : initialContent.cancellation_en)?.length ?? 0) > 0 && (
-        <CancellationSection lang={lang} initialContent={initialContent} />
-      )}
+      {/* Las secciones "Información para tu estadía", "Cómo llegar" y
+          "Políticas de cancelación" viven ahora dentro del motor de
+          reservas (/booking) como pestañas, para que el huésped las vea
+          cuando está reservando, no como contenido pesado en el home. */}
 
       {/* Contact Section - Museum Gallery Style */}
       <section id="contact" className="py-40 bg-[#FCFBF7]">
@@ -722,96 +712,11 @@ function RoomsSection({ lang, t, initialContent, rooms }: RoomsSectionProps) {
   );
 }
 
-function StayInfoSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
-  const items = initialContent.stayInfo ?? [];
-  const title = lang === 'es' ? initialContent.stayInfoTitle_es : initialContent.stayInfoTitle_en;
-  return (
-    <section id="estadia" className="py-32 bg-white">
-      <div className="container mx-auto px-6">
-        <div className="max-w-3xl mb-16">
-          <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
-            {lang === 'es' ? 'Antes de reservar' : 'Before booking'}
-          </span>
-          <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark">{title}</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {items.map((item, i) => {
-            const IconCmp = STAY_ICONS[item.icon] ?? Clock;
-            const label = lang === 'es' ? item.label_es : item.label_en;
-            const value = lang === 'es' ? item.value_es : item.value_en;
-            const cardCls = item.highlight
-              ? 'bg-primary/5 border-primary/30 md:col-span-2'
-              : 'bg-white border-zinc-100';
-            return (
-              <div
-                key={i}
-                className={`flex items-start gap-5 p-6 lg:p-7 rounded-[2rem] border ${cardCls} shadow-sm`}
-              >
-                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${item.highlight ? 'bg-primary text-white' : 'bg-zinc-50 text-primary'}`}>
-                  <IconCmp className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1.5">{label}</span>
-                  <span className={`block text-base font-bold leading-snug ${item.highlight ? 'text-dark' : 'text-dark/85'}`}>{value}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HowToArriveSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
-  const title = lang === 'es' ? initialContent.howToArriveTitle_es : initialContent.howToArriveTitle_en;
-  const body = lang === 'es' ? initialContent.howToArrive_es : initialContent.howToArrive_en;
-  if (!body) return null;
-  return (
-    <section id="como-llegar" className="py-32 bg-zinc-50">
-      <div className="container mx-auto px-6 grid lg:grid-cols-12 gap-12 items-start">
-        <div className="lg:col-span-4">
-          <div className="aspect-square bg-gradient-to-br from-secondary/20 via-primary/10 to-accent/10 rounded-[3rem] flex items-center justify-center shadow-sm">
-            <Ship className="w-24 h-24 text-primary" />
-          </div>
-        </div>
-        <div className="lg:col-span-8">
-          <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
-            {lang === 'es' ? 'Acceso al hotel' : 'Getting here'}
-          </span>
-          <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark mb-10">{title}</h2>
-          <div className="space-y-5 text-lg text-zinc-600 font-medium leading-relaxed whitespace-pre-line">{body}</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CancellationSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
-  const title = lang === 'es' ? initialContent.cancellationTitle_es : initialContent.cancellationTitle_en;
-  const items = lang === 'es' ? initialContent.cancellation_es : initialContent.cancellation_en;
-  if (!items || items.length === 0) return null;
-  return (
-    <section id="politicas" className="py-32 bg-white">
-      <div className="container mx-auto px-6 max-w-4xl">
-        <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
-          {lang === 'es' ? 'Términos' : 'Terms'}
-        </span>
-        <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark mb-12">{title}</h2>
-        <ul className="space-y-5">
-          {items.map((item, i) => (
-            <li key={i} className="flex items-start gap-5 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
-              <span className="w-9 h-9 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 text-sm">
-                {i + 1}
-              </span>
-              <span className="text-zinc-700 leading-relaxed font-medium pt-1.5">{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
+// Las secciones StayInfoSection, HowToArriveSection y CancellationSection
+// se eliminaron del landing en este commit — el contenido editorial ahora
+// vive como pestañas dentro de /booking (StayInfoPanel, HowToArrivePanel,
+// PoliciesPanel en src/app/booking/page.tsx). Fuente de verdad única:
+// src/content/landing.ts.
 
 interface SearchBarProps { lang: 'es' | 'en' }
 

@@ -3,8 +3,21 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Calendar, User, Search, ChevronRight, Zap, Coffee, Wind, Wifi, Star, X } from 'lucide-react';
+import {
+  Clock, LogIn, LogOut, CreditCard, Ship, Dumbbell,
+  ShieldCheck, XCircle, Utensils, Waves,
+} from '@/lib/icons';
 import { getAvailableRooms, createGuestReservation, validateBookingDates } from '@/lib/bookingService';
 import { useTranslation } from '@/i18n/useTranslation';
+import { LANDING_CONTENT } from '@/content/landing';
+
+type BookingTab = 'rooms' | 'pasadias' | 'estadia' | 'llegar' | 'politicas';
+
+// Mapa de íconos para stayInfo (mismo que LandingView).
+const STAY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Clock, LogIn, LogOut, Coffee, Utensils, Dumbbell,
+  ShieldCheck, CreditCard, Waves, XCircle,
+};
 
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -64,7 +77,7 @@ function BookingPageInner() {
   );
   const [selectedRoom, setSelectedRoom] = useState<AvailableRoom | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'rooms' | 'pasadias'>('rooms');
+  const [activeTab, setActiveTab] = useState<BookingTab>('rooms');
   const [bookingHero, setBookingHero] = useState('');
 
   const [checkoutData, setCheckoutData] = useState({
@@ -239,32 +252,56 @@ function BookingPageInner() {
       </div>
 
       <main className="container mx-auto px-6 pt-20 pb-20">
-         {/* Tabs Navigation */}
+         {/* Tabs Navigation — 5 pestañas: 2 reservables + 3 informativas */}
          <div className="flex justify-center mb-16">
-            <div className="bg-zinc-100 p-1.5 rounded-[2rem] flex gap-2">
-               <button 
+            <div className="bg-zinc-100 p-1.5 rounded-[2rem] flex flex-wrap gap-1 sm:gap-2 max-w-full">
+               <button
                   onClick={() => setActiveTab('rooms')}
-                  className={`px-10 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'rooms' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'rooms' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Habitaciones' : 'Rooms'}
                </button>
-               <button 
+               <button
                   onClick={() => setActiveTab('pasadias')}
-                  className={`px-10 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'pasadias' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'pasadias' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Pasadías' : 'Day Passes'}
+               </button>
+               <button
+                  onClick={() => setActiveTab('estadia')}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'estadia' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+               >
+                  {language === 'es' ? 'Información' : 'Info'}
+               </button>
+               <button
+                  onClick={() => setActiveTab('llegar')}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'llegar' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+               >
+                  {language === 'es' ? 'Cómo llegar' : 'How to arrive'}
+               </button>
+               <button
+                  onClick={() => setActiveTab('politicas')}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'politicas' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+               >
+                  {language === 'es' ? 'Políticas' : 'Policies'}
                </button>
             </div>
          </div>
 
-         {loading && (
+         {/* Paneles informativos: muestran contenido editorial del cliente.
+             PT no tiene contenido nuevo todavía, así que mostramos ES como fallback. */}
+         {activeTab === 'estadia' && <StayInfoPanel language={language === 'en' ? 'en' : 'es'} />}
+         {activeTab === 'llegar' && <HowToArrivePanel language={language === 'en' ? 'en' : 'es'} />}
+         {activeTab === 'politicas' && <PoliciesPanel language={language === 'en' ? 'en' : 'es'} />}
+
+         {(activeTab === 'rooms' || activeTab === 'pasadias') && loading && (
             <div className="flex flex-col items-center justify-center py-20 animate-pulse">
                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
                <p className="text-sm font-black text-zinc-300 uppercase tracking-[0.3em]">{t('booking.searchRooms')}</p>
             </div>
          )}
 
-         {!loading && filteredRooms.length === 0 && (
+         {(activeTab === 'rooms' || activeTab === 'pasadias') && !loading && filteredRooms.length === 0 && (
             <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
                <span className="text-5xl block mb-6">🏝️</span>
                <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
@@ -272,6 +309,7 @@ function BookingPageInner() {
             </div>
          )}
 
+         {(activeTab === 'rooms' || activeTab === 'pasadias') && (
          <div className="grid grid-cols-1 gap-12 max-w-6xl mx-auto">
             {filteredRooms.map((room) => (
               <div key={room.id} className="group bg-white rounded-[40px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] transition-all duration-500 border border-zinc-50 flex flex-col lg:flex-row">
@@ -333,6 +371,7 @@ function BookingPageInner() {
               </div>
             ))}
          </div>
+         )}
       </main>
 
       {toast && (
@@ -347,5 +386,98 @@ function BookingPageInner() {
         </div>
       )}
     </div>
+  );
+}
+
+// ============================================================
+// Paneles informativos
+// ============================================================
+// Estos tres paneles consumen el contenido editorial de LANDING_CONTENT
+// (fuente de verdad única, evita duplicar texto entre landing y booking).
+// Renderizan dentro del flujo del booking cuando el usuario elige una
+// pestaña distinta de Habitaciones/Pasadías. La intención: que el huésped
+// pueda revisar reglas y logística sin salir del flujo de reserva.
+
+function StayInfoPanel({ language }: { language: 'es' | 'en' }) {
+  const items = LANDING_CONTENT.stayInfo ?? [];
+  const title = language === 'es' ? LANDING_CONTENT.stayInfoTitle_es : LANDING_CONTENT.stayInfoTitle_en;
+  return (
+    <section className="max-w-5xl mx-auto">
+      <div className="text-center mb-12">
+        <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-3 block">
+          {language === 'es' ? 'Antes de reservar' : 'Before booking'}
+        </span>
+        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-dark">{title}</h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {items.map((item, i) => {
+          const IconCmp = STAY_ICONS[item.icon] ?? Clock;
+          const label = language === 'es' ? item.label_es : item.label_en;
+          const value = language === 'es' ? item.value_es : item.value_en;
+          const cardCls = item.highlight
+            ? 'bg-primary/5 border-primary/30 md:col-span-2'
+            : 'bg-white border-zinc-100';
+          return (
+            <div key={i} className={`flex items-start gap-5 p-6 lg:p-7 rounded-[2rem] border ${cardCls} shadow-sm`}>
+              <span className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${item.highlight ? 'bg-primary text-white' : 'bg-zinc-50 text-primary'}`}>
+                <IconCmp className="w-5 h-5" />
+              </span>
+              <div className="min-w-0">
+                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1.5">{label}</span>
+                <span className={`block text-base font-bold leading-snug ${item.highlight ? 'text-dark' : 'text-dark/85'}`}>{value}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function HowToArrivePanel({ language }: { language: 'es' | 'en' }) {
+  const title = language === 'es' ? LANDING_CONTENT.howToArriveTitle_es : LANDING_CONTENT.howToArriveTitle_en;
+  const body = language === 'es' ? LANDING_CONTENT.howToArrive_es : LANDING_CONTENT.howToArrive_en;
+  if (!body) return null;
+  return (
+    <section className="max-w-5xl mx-auto grid lg:grid-cols-12 gap-12 items-start">
+      <div className="lg:col-span-4">
+        <div className="aspect-square bg-gradient-to-br from-secondary/20 via-primary/10 to-accent/10 rounded-[3rem] flex items-center justify-center shadow-sm">
+          <Ship className="w-24 h-24 text-primary" />
+        </div>
+      </div>
+      <div className="lg:col-span-8">
+        <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-3 block">
+          {language === 'es' ? 'Acceso al hotel' : 'Getting here'}
+        </span>
+        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-dark mb-8">{title}</h2>
+        <div className="space-y-5 text-base lg:text-lg text-zinc-600 font-medium leading-relaxed whitespace-pre-line">{body}</div>
+      </div>
+    </section>
+  );
+}
+
+function PoliciesPanel({ language }: { language: 'es' | 'en' }) {
+  const title = language === 'es' ? LANDING_CONTENT.cancellationTitle_es : LANDING_CONTENT.cancellationTitle_en;
+  const items = language === 'es' ? LANDING_CONTENT.cancellation_es : LANDING_CONTENT.cancellation_en;
+  if (!items || items.length === 0) return null;
+  return (
+    <section className="max-w-4xl mx-auto">
+      <div className="text-center mb-12">
+        <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-3 block">
+          {language === 'es' ? 'Términos' : 'Terms'}
+        </span>
+        <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-dark">{title}</h2>
+      </div>
+      <ul className="space-y-5">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-5 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
+            <span className="w-9 h-9 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 text-sm">
+              {i + 1}
+            </span>
+            <span className="text-zinc-700 leading-relaxed font-medium pt-1.5">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
