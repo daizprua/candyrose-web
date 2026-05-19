@@ -6,8 +6,38 @@ import { useRouter } from 'next/navigation';
 import {
   Calendar, MapPin, Star, Utensils, Waves,
   Wine, Users, ChevronRight, Globe, Menu, X,
-  Wifi, Coffee, Wind, Phone, Camera, Instagram, Map, Image
+  Wifi, Coffee, Wind, Phone, Camera, Instagram, Map, Image,
+  Clock, LogIn, LogOut, CreditCard, Ship, Dumbbell,
+  ShieldCheck, PawPrint, XCircle, Anchor, Building2
 } from '@/lib/icons';
+
+interface RoomEditorial {
+  code: string;
+  name_es: string;
+  name_en: string;
+  description_es: string;
+  description_en: string;
+  order: number;
+  group: "main" | "villa";
+}
+
+interface StayInfoItem {
+  icon: string;
+  label_es: string;
+  label_en: string;
+  value_es: string;
+  value_en: string;
+  highlight?: boolean;
+}
+
+const STAY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Clock, LogIn, LogOut, Coffee, Utensils, Dumbbell,
+  ShieldCheck, CreditCard, Waves, PawPrint, XCircle,
+};
+
+function normalizeCode(s: string | undefined | null): string {
+  return (s ?? "").trim().toUpperCase();
+}
 
 const isoDate = (d: Date) => d.toISOString().split('T')[0];
 
@@ -36,11 +66,32 @@ interface CMSContent {
   roomsSub_en: string;
   contactTitle_es: string;
   contactTitle_en: string;
+  contactDesc_es?: string;
+  contactDesc_en?: string;
   contactPhone: string;
   contactInsta: string;
   contactEmail: string;
   contactLocation: string;
   contactBg?: string;
+  // Editorial nuevos
+  rooms?: RoomEditorial[];
+  villasGroupLabel_es?: string;
+  villasGroupLabel_en?: string;
+  roomIncludesTitle_es?: string;
+  roomIncludesTitle_en?: string;
+  roomIncludes_es?: string[];
+  roomIncludes_en?: string[];
+  stayInfoTitle_es?: string;
+  stayInfoTitle_en?: string;
+  stayInfo?: StayInfoItem[];
+  howToArriveTitle_es?: string;
+  howToArriveTitle_en?: string;
+  howToArrive_es?: string;
+  howToArrive_en?: string;
+  cancellationTitle_es?: string;
+  cancellationTitle_en?: string;
+  cancellation_es?: string[];
+  cancellation_en?: string[];
 }
 
 export default function LandingView({ initialContent, rooms }: { initialContent: CMSContent, rooms: any[] }) {
@@ -191,7 +242,7 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
                 </div>
               </div>
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-full mb-8 tracking-[0.3em] uppercase animate-in slide-in-from-left duration-700">
-                  <MapPin className="w-3 h-3 fill-current" /> Isla Grande, Colón
+                  <MapPin className="w-3 h-3 fill-current" /> {initialContent.contactLocation}
               </div>
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-dark mb-8 leading-[0.9] max-w-2xl animate-in slide-in-from-left duration-1000 delay-200">
                  {t.heroTitle}
@@ -287,50 +338,26 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
           </div>
       </section>
 
-      {/* Room Showcase */}
-      <section id="rooms" className="py-32 bg-zinc-50">
-          <div className="container mx-auto px-6">
-              <div className="flex flex-col lg:flex-row justify-between items-end mb-20">
-                  <div className="max-w-2xl">
-                    <span className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">{t.roomsSub}</span>
-                    <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark">
-                        {lang === 'es' ? 'Nuestras Habitaciones' : 'Our Rooms'}
-                    </h2>
-                  </div>
-                  <Link href="/booking" className="hidden lg:flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-dark transition-colors mt-8 lg:mt-0">
-                      {t.viewAllRooms} <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
-                  </Link>
-              </div>
+      {/* Room Showcase — editorial × API merge.
+          Names + descriptions vienen del landing.ts (editorial).
+          Imágenes + id de reserva se buscan en la API por código del tipo de habitación.
+          Si la API no tiene match, la card se muestra sin link a reserva. */}
+      <RoomsSection lang={lang} t={t} initialContent={initialContent} rooms={rooms} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                  {rooms
-                    .filter(room => {
-                      const searchStr = `${room.name} ${room.type}`.toLowerCase();
-                      return !searchStr.includes('pasadia') && !searchStr.includes('pasadía');
-                    })
-                    .slice(0, 5)
-                    .map((room, i) => (
-                      <div key={i} className="group bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-zinc-100 flex flex-col">
-                          <div className="aspect-[4/5] relative overflow-hidden bg-zinc-100">
-                              {room.images?.[0] ? (
-                                <img src={room.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                    <Image className="w-10 h-10 text-zinc-300" />
-                                </div>
-                              )}
-                          </div>
-                          <div className="p-6 flex-1 flex flex-col">
-                              <h3 className="text-lg font-black tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-1">{room.name || room.type}</h3>
-                              <p className="text-zinc-500 font-medium text-[11px] leading-relaxed line-clamp-3">
-                                  {room.description || "Un espacio diseñado para tu descanso absoluto frente al mar."}
-                              </p>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      </section>
+      {/* Información para tu estadía */}
+      {(initialContent.stayInfo?.length ?? 0) > 0 && (
+        <StayInfoSection lang={lang} initialContent={initialContent} />
+      )}
+
+      {/* Cómo llegar */}
+      {(lang === 'es' ? initialContent.howToArrive_es : initialContent.howToArrive_en) && (
+        <HowToArriveSection lang={lang} initialContent={initialContent} />
+      )}
+
+      {/* Políticas de cancelación */}
+      {((lang === 'es' ? initialContent.cancellation_es : initialContent.cancellation_en)?.length ?? 0) > 0 && (
+        <CancellationSection lang={lang} initialContent={initialContent} />
+      )}
 
       {/* Contact Section - Museum Gallery Style */}
       <section id="contact" className="py-40 bg-[#FCFBF7]">
@@ -344,7 +371,8 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
                               {t.contactTitle}
                           </h2>
                           <p className="text-xl text-zinc-500 max-w-sm leading-relaxed">
-                              {lang === 'es' ? 'Desde una consulta rápida hasta una reserva personalizada, estamos aquí para hacer tu escape realidad.' : 'From a quick inquiry to a personalized booking, we are here to make your escape a reality.'}
+                              {(lang === 'es' ? initialContent.contactDesc_es : initialContent.contactDesc_en)
+                                ?? (lang === 'es' ? 'Desde una consulta rápida hasta una reserva personalizada, estamos aquí para hacer tu escape realidad.' : 'From a quick inquiry to a personalized booking, we are here to make your escape a reality.')}
                           </p>
                       </div>
 
@@ -552,6 +580,236 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
         </div>
       )}
     </div>
+  );
+}
+
+// ============================================================
+// Secciones nuevas (editorial)
+// ============================================================
+
+interface RoomsSectionProps {
+  lang: 'es' | 'en';
+  t: { roomsSub: string; roomsTitle: string; viewAllRooms: string };
+  initialContent: CMSContent;
+  rooms: any[];
+}
+
+function RoomsSection({ lang, t, initialContent, rooms }: RoomsSectionProps) {
+  // Si no hay override editorial, fallback al render genérico de la API.
+  const editorial = initialContent.rooms;
+  if (!editorial || editorial.length === 0) {
+    return (
+      <section id="rooms" className="py-32 bg-zinc-50">
+        <div className="container mx-auto px-6">
+          <h2 className="text-5xl font-black tracking-tight text-dark mb-12">{t.roomsTitle}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {rooms.slice(0, 6).map((room, i) => (
+              <div key={i} className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-zinc-100 flex flex-col">
+                <div className="aspect-[4/5] bg-zinc-100">
+                  {room.images?.[0] ? <img src={room.images[0]} className="w-full h-full object-cover" /> : null}
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-black mb-2">{room.name || room.type}</h3>
+                  <p className="text-zinc-500 text-[11px]">{room.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Merge editorial × API por código de tipo de habitación.
+  // Usamos Record<string, any> en vez de Map para no chocar con el alias Map de @/lib/icons.
+  const apiByCode: Record<string, any> = {};
+  for (const r of rooms) {
+    const key = normalizeCode(r.code ?? r.codigo ?? r.tipoCodigo);
+    if (key) apiByCode[key] = r;
+  }
+  const sorted = [...editorial].sort((a, b) => a.order - b.order);
+  const main = sorted.filter((r) => r.group === 'main');
+  const villas = sorted.filter((r) => r.group === 'villa');
+
+  const renderCard = (room: RoomEditorial) => {
+    const apiRoom = apiByCode[normalizeCode(room.code)];
+    const imageUrl = apiRoom?.images?.[0];
+    const reservaHref = apiRoom?.id ? `/booking?roomId=${apiRoom.id}` : '/booking';
+    const name = lang === 'es' ? room.name_es : room.name_en;
+    const description = lang === 'es' ? room.description_es : room.description_en;
+    return (
+      <Link
+        key={room.code}
+        href={reservaHref}
+        className="group bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-zinc-100 flex flex-col"
+      >
+        <div className="aspect-[4/5] relative overflow-hidden bg-zinc-100">
+          {imageUrl ? (
+            <img src={imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={name} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Image className="w-10 h-10 text-zinc-300" />
+            </div>
+          )}
+        </div>
+        <div className="p-6 flex-1 flex flex-col">
+          <h3 className="text-lg font-black tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">{name}</h3>
+          <p className="text-zinc-500 font-medium text-[11px] leading-relaxed line-clamp-4">{description}</p>
+        </div>
+      </Link>
+    );
+  };
+
+  const includes = lang === 'es' ? initialContent.roomIncludes_es : initialContent.roomIncludes_en;
+  const includesTitle = lang === 'es' ? initialContent.roomIncludesTitle_es : initialContent.roomIncludesTitle_en;
+  const villasLabel = lang === 'es' ? initialContent.villasGroupLabel_es : initialContent.villasGroupLabel_en;
+  const includeIcons = [Coffee, Building2, Anchor, Utensils, Waves, Dumbbell];
+
+  return (
+    <section id="rooms" className="py-32 bg-zinc-50">
+      <div className="container mx-auto px-6">
+        <div className="flex flex-col lg:flex-row justify-between items-end mb-20">
+          <div className="max-w-2xl">
+            <span className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">{t.roomsSub}</span>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark">{t.roomsTitle}</h2>
+          </div>
+          <Link href="/booking" className="hidden lg:flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-dark transition-colors mt-8 lg:mt-0">
+            {t.viewAllRooms} <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
+          </Link>
+        </div>
+
+        {main.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {main.map(renderCard)}
+          </div>
+        )}
+
+        {villas.length > 0 && (
+          <>
+            {villasLabel && (
+              <div className="flex items-center gap-4 mb-8 mt-4">
+                <div className="h-px flex-1 bg-zinc-200" />
+                <span className="text-secondary text-[10px] font-black uppercase tracking-[0.4em] whitespace-nowrap">{villasLabel}</span>
+                <div className="h-px flex-1 bg-zinc-200" />
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {villas.map(renderCard)}
+            </div>
+          </>
+        )}
+
+        {includes && includes.length > 0 && (
+          <div className="mt-20 bg-white rounded-[32px] border border-zinc-100 p-8 lg:p-12 shadow-sm">
+            <h3 className="text-2xl lg:text-3xl font-black tracking-tight text-dark mb-8">{includesTitle}</h3>
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
+              {includes.map((item, i) => {
+                const IconCmp = includeIcons[i] ?? Coffee;
+                return (
+                  <li key={i} className="flex items-start gap-3 text-zinc-600 text-sm font-medium">
+                    <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <IconCmp className="w-4 h-4" />
+                    </span>
+                    <span className="leading-snug pt-1.5">{item}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StayInfoSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
+  const items = initialContent.stayInfo ?? [];
+  const title = lang === 'es' ? initialContent.stayInfoTitle_es : initialContent.stayInfoTitle_en;
+  return (
+    <section id="estadia" className="py-32 bg-white">
+      <div className="container mx-auto px-6">
+        <div className="max-w-3xl mb-16">
+          <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
+            {lang === 'es' ? 'Antes de reservar' : 'Before booking'}
+          </span>
+          <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark">{title}</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {items.map((item, i) => {
+            const IconCmp = STAY_ICONS[item.icon] ?? Clock;
+            const label = lang === 'es' ? item.label_es : item.label_en;
+            const value = lang === 'es' ? item.value_es : item.value_en;
+            const cardCls = item.highlight
+              ? 'bg-primary/5 border-primary/30 md:col-span-2'
+              : 'bg-white border-zinc-100';
+            return (
+              <div
+                key={i}
+                className={`flex items-start gap-5 p-6 lg:p-7 rounded-[2rem] border ${cardCls} shadow-sm`}
+              >
+                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${item.highlight ? 'bg-primary text-white' : 'bg-zinc-50 text-primary'}`}>
+                  <IconCmp className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1.5">{label}</span>
+                  <span className={`block text-base font-bold leading-snug ${item.highlight ? 'text-dark' : 'text-dark/85'}`}>{value}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowToArriveSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
+  const title = lang === 'es' ? initialContent.howToArriveTitle_es : initialContent.howToArriveTitle_en;
+  const body = lang === 'es' ? initialContent.howToArrive_es : initialContent.howToArrive_en;
+  if (!body) return null;
+  return (
+    <section id="como-llegar" className="py-32 bg-zinc-50">
+      <div className="container mx-auto px-6 grid lg:grid-cols-12 gap-12 items-start">
+        <div className="lg:col-span-4">
+          <div className="aspect-square bg-gradient-to-br from-secondary/20 via-primary/10 to-accent/10 rounded-[3rem] flex items-center justify-center shadow-sm">
+            <Ship className="w-24 h-24 text-primary" />
+          </div>
+        </div>
+        <div className="lg:col-span-8">
+          <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
+            {lang === 'es' ? 'Acceso al hotel' : 'Getting here'}
+          </span>
+          <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark mb-10">{title}</h2>
+          <div className="space-y-5 text-lg text-zinc-600 font-medium leading-relaxed whitespace-pre-line">{body}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CancellationSection({ lang, initialContent }: { lang: 'es' | 'en'; initialContent: CMSContent }) {
+  const title = lang === 'es' ? initialContent.cancellationTitle_es : initialContent.cancellationTitle_en;
+  const items = lang === 'es' ? initialContent.cancellation_es : initialContent.cancellation_en;
+  if (!items || items.length === 0) return null;
+  return (
+    <section id="politicas" className="py-32 bg-white">
+      <div className="container mx-auto px-6 max-w-4xl">
+        <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 block">
+          {lang === 'es' ? 'Términos' : 'Terms'}
+        </span>
+        <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-none text-dark mb-12">{title}</h2>
+        <ul className="space-y-5">
+          {items.map((item, i) => (
+            <li key={i} className="flex items-start gap-5 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
+              <span className="w-9 h-9 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0 text-sm">
+                {i + 1}
+              </span>
+              <span className="text-zinc-700 leading-relaxed font-medium pt-1.5">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 

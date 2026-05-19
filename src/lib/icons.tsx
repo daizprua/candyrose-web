@@ -8,37 +8,40 @@
  * 3. Inconsistent naming.
  */
 
-import { 
-  Calendar, MapPin, Star, Utensils, Waves, 
+import {
+  Calendar, MapPin, Star, Utensils, Waves,
   Wine, Users, ChevronRight, Globe, Menu, X,
   Wifi, Coffee, Wind, Phone, Camera,
-  Search, Bell, LogOut, Home, Key, ShoppingCart, 
-  Package, ChefHat, BedDouble, Wrench, Moon, 
-  BarChart3, BellRing, Box, Bath, Tag, PieChart, 
-  Coins, ShieldCheck, Settings, Building2, Database, 
+  Search, Bell, LogOut, LogIn, Home, Key, ShoppingCart,
+  Package, ChefHat, BedDouble, Wrench, Moon,
+  BarChart3, BellRing, Box, Bath, Tag, PieChart,
+  Coins, ShieldCheck, Settings, Building2, Database,
   FileText, Settings2, Layout, ClipboardList, Lock,
   Plus, Trash2, Edit3, Save, Check, AlertCircle,
   ArrowRight, ArrowLeft, Image as LucideImage,
-  Upload, Sparkles, Send
+  Upload, Sparkles, Send,
+  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor
 } from 'lucide-react';
 
 // Re-export with alias for commonly missing or renamed icons
 export const Instagram = Camera; // Instagram is missing in 1.8.0
 export const Map = MapPin;        // Map is sometimes missing or renamed
+export const PawPrint = AlertCircle; // PawPrint may not exist in older lucide; fallback safe
 
 // Standard Exports
 export {
-  Calendar, MapPin, Star, Utensils, Waves, 
+  Calendar, MapPin, Star, Utensils, Waves,
   Wine, Users, ChevronRight, Globe, Menu, X,
   Wifi, Coffee, Wind, Phone, Camera,
-  Search, Bell, LogOut, Home, Key, ShoppingCart, 
-  Package, ChefHat, BedDouble, Wrench, Moon, 
-  BarChart3, BellRing, Box, Bath, Tag, PieChart, 
-  Coins, ShieldCheck, Settings, Building2, Database, 
+  Search, Bell, LogOut, LogIn, Home, Key, ShoppingCart,
+  Package, ChefHat, BedDouble, Wrench, Moon,
+  BarChart3, BellRing, Box, Bath, Tag, PieChart,
+  Coins, ShieldCheck, Settings, Building2, Database,
   FileText, Settings2, Layout, ClipboardList, Lock,
   Plus, Trash2, Edit3, Save, Check, AlertCircle,
   ArrowRight, ArrowLeft, LucideImage as Image,
-  Upload, Sparkles, Send
+  Upload, Sparkles, Send,
+  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor
 };
 
 /**
