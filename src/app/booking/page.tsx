@@ -8,6 +8,7 @@ import {
   ShieldCheck, XCircle, Utensils, Waves,
 } from '@/lib/icons';
 import { getAvailableRooms, createGuestReservation, validateBookingDates } from '@/lib/bookingService';
+import { listarPasadias, crearReservaPasadia, type PasadiaProducto } from '@/lib/contabiliClient';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LANDING_CONTENT } from '@/content/landing';
 
@@ -92,6 +93,35 @@ function BookingPageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // ------- PASADÍAS -------
+  // Catálogo se carga una sola vez al entrar al tab. Las pasadías no dependen
+  // de check-in/check-out: el cliente elige una fecha de visita aparte.
+  const [pasadias, setPasadias] = useState<PasadiaProducto[]>([]);
+  const [pasadiasLoading, setPasadiasLoading] = useState(false);
+  const [pasadiasError, setPasadiasError] = useState('');
+  const [pasadiasLoaded, setPasadiasLoaded] = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'pasadias' || pasadiasLoaded) return;
+    let cancelled = false;
+    setPasadiasLoading(true);
+    setPasadiasError('');
+    listarPasadias()
+      .then((data) => {
+        if (cancelled) return;
+        setPasadias(data);
+        setPasadiasLoaded(true);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setPasadiasError(err instanceof Error ? err.message : 'Error cargando pasadías');
+      })
+      .finally(() => {
+        if (!cancelled) setPasadiasLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeTab, pasadiasLoaded]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 4000);
@@ -173,11 +203,13 @@ function BookingPageInner() {
     (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  // Habitaciones siempre excluyen tipos legacy con "pasadia" en el nombre.
+  // El listado de pasadías ahora viene de su propio endpoint (no de bookingPublic.disponibilidad).
   const filteredRooms = rooms.filter(room => {
       const name = (room.name || '').toLowerCase();
       const type = (room.type || '').toLowerCase();
       const isPasadia = name.includes('pasadia') || name.includes('pasadía') || type.includes('pasadia') || type.includes('pasadía');
-      return activeTab === 'rooms' ? !isPasadia : isPasadia;
+      return !isPasadia;
   });
 
   return (
@@ -233,11 +265,36 @@ function BookingPageInner() {
          <div className="bg-white/90 backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] rounded-[40px] p-4 lg:p-6 border border-white grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="space-y-2 px-4">
                <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2"><Calendar className="w-3 h-3" /> {t('booking.checkIn')}</label>
-               <input type="date" value={checkInDate} onChange={e => setCheckInDate(e.target.value)} className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors" />
+               <input
+                  type="date"
+                  value={checkInDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setCheckInDate(v);
+                    // Si la salida queda igual o anterior a la entrada, auto-ajustar a +1 día.
+                    if (v && checkOutDate && new Date(checkOutDate).getTime() <= new Date(v).getTime()) {
+                      const next = new Date(v);
+                      next.setDate(next.getDate() + 1);
+                      setCheckOutDate(next.toISOString().split('T')[0]);
+                    }
+                  }}
+                  className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors"
+               />
             </div>
             <div className="space-y-2 px-4">
                <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2"><Calendar className="w-3 h-3" /> {t('booking.checkOut')}</label>
-               <input type="date" value={checkOutDate} onChange={e => setCheckOutDate(e.target.value)} className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors" />
+               <input
+                  type="date"
+                  value={checkOutDate}
+                  min={(() => {
+                    const d = new Date(checkInDate || new Date().toISOString().split('T')[0]);
+                    d.setDate(d.getDate() + 1);
+                    return d.toISOString().split('T')[0];
+                  })()}
+                  onChange={e => setCheckOutDate(e.target.value)}
+                  className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors"
+               />
             </div>
             <div className="space-y-2 px-4">
                <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2"><User className="w-3 h-3" /> {language === 'es' ? 'Huéspedes' : 'Guests'}</label>
@@ -294,22 +351,49 @@ function BookingPageInner() {
          {activeTab === 'llegar' && <HowToArrivePanel language={language === 'en' ? 'en' : 'es'} />}
          {activeTab === 'politicas' && <PoliciesPanel language={language === 'en' ? 'en' : 'es'} />}
 
-         {(activeTab === 'rooms' || activeTab === 'pasadias') && loading && (
+         {activeTab === 'rooms' && loading && (
             <div className="flex flex-col items-center justify-center py-20 animate-pulse">
                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
                <p className="text-sm font-black text-zinc-300 uppercase tracking-[0.3em]">{t('booking.searchRooms')}</p>
             </div>
          )}
 
-         {(activeTab === 'rooms' || activeTab === 'pasadias') && !loading && filteredRooms.length === 0 && (
+         {activeTab === 'rooms' && !loading && filteredRooms.length === 0 && (
             <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
-               <span className="text-5xl block mb-6">🏝️</span>
-               <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
-               <p className="text-zinc-400 font-medium">Intenta con otras fechas o ajusta los huéspedes.</p>
+               {error ? (
+                  <>
+                     <h3 className="text-2xl font-black mb-2 text-primary">
+                        {language === 'es' ? 'Revisa las fechas' : 'Check your dates'}
+                     </h3>
+                     <p className="text-zinc-500 font-medium max-w-md mx-auto">
+                        {language === 'es'
+                           ? 'La fecha de salida debe ser al menos un día después de la fecha de entrada.'
+                           : 'Check-out must be at least one day after check-in.'}
+                     </p>
+                  </>
+               ) : (
+                  <>
+                     <span className="text-5xl block mb-6">🏝️</span>
+                     <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
+                     <p className="text-zinc-400 font-medium">Intenta con otras fechas o ajusta los huéspedes.</p>
+                  </>
+               )}
             </div>
          )}
 
-         {(activeTab === 'rooms' || activeTab === 'pasadias') && (
+         {/* Panel Pasadías — viene de bookingPublic.pasadiasCatalogo y reservas se
+             crean con su propio mutation. NO depende de checkIn/checkOut. */}
+         {activeTab === 'pasadias' && (
+           <PasadiasPanel
+             language={language}
+             productos={pasadias}
+             loading={pasadiasLoading}
+             error={pasadiasError}
+             onToast={setToast}
+           />
+         )}
+
+         {activeTab === 'rooms' && (
          <div className="grid grid-cols-1 gap-12 max-w-6xl mx-auto">
             {filteredRooms.map((room) => (
               <div key={room.id} className="group bg-white rounded-[40px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] transition-all duration-500 border border-zinc-50 flex flex-col lg:flex-row">
@@ -479,5 +563,246 @@ function PoliciesPanel({ language }: { language: 'es' | 'en' }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+// ============================================================
+// PASADÍAS PANEL
+// ============================================================
+// Render del catálogo + carrito + form de reserva. Las pasadías son un
+// producto independiente de las habitaciones — el huésped no necesita
+// elegir check-in/check-out, solo una fecha de visita.
+function PasadiasPanel({
+  language,
+  productos,
+  loading,
+  error,
+  onToast,
+}: {
+  language: 'es' | 'en' | 'pt';
+  productos: PasadiaProducto[];
+  loading: boolean;
+  error: string;
+  onToast: (t: { type: 'success' | 'error'; text: string } | null) => void;
+}) {
+  const lang: 'es' | 'en' = language === 'en' ? 'en' : 'es';
+  const [cantidades, setCantidades] = useState<Record<string, number>>({});
+  const [reservaOpen, setReservaOpen] = useState(false);
+  const [fecha, setFecha] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [notas, setNotas] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const items = productos
+    .map((p) => ({ producto: p, cantidad: cantidades[p.id] ?? 0 }))
+    .filter((it) => it.cantidad > 0);
+  const total = items.reduce((acc, it) => acc + it.producto.precio * it.cantidad, 0);
+
+  function setCantidad(id: string, delta: number) {
+    setCantidades((prev) => {
+      const nuevo = Math.max(0, (prev[id] ?? 0) + delta);
+      return { ...prev, [id]: nuevo };
+    });
+  }
+
+  async function confirmar() {
+    if (items.length === 0) {
+      onToast({ type: 'error', text: lang === 'es' ? 'Selecciona al menos un pasadía' : 'Pick at least one day pass' });
+      return;
+    }
+    if (!nombre.trim() || !email.trim()) {
+      onToast({ type: 'error', text: lang === 'es' ? 'Nombre y email son requeridos' : 'Name and email are required' });
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await crearReservaPasadia({
+        fecha,
+        nombre,
+        email,
+        telefono: telefono || undefined,
+        notas: notas || undefined,
+        items: items.map((it) => ({ productoId: it.producto.id, cantidad: it.cantidad })),
+        idioma: lang,
+      });
+      onToast({ type: 'success', text: `${lang === 'es' ? 'Pasadía confirmada' : 'Day pass confirmed'} · ${res.codigo}` });
+      setReservaOpen(false);
+      setCantidades({});
+      setNombre(''); setEmail(''); setTelefono(''); setNotas('');
+    } catch (err: unknown) {
+      onToast({ type: 'error', text: err instanceof Error ? err.message : 'Error' });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-black text-zinc-300 uppercase tracking-[0.3em]">
+          {lang === 'es' ? 'Cargando pasadías…' : 'Loading day passes…'}
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
+        <h3 className="text-2xl font-black mb-2 text-red-600">
+          {lang === 'es' ? 'No pudimos cargar el catálogo' : 'Could not load catalog'}
+        </h3>
+        <p className="text-zinc-500 font-medium max-w-md mx-auto">{error}</p>
+      </div>
+    );
+  }
+
+  if (productos.length === 0) {
+    return (
+      <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
+        <h3 className="text-2xl font-black mb-2">
+          {lang === 'es' ? 'Sin pasadías disponibles' : 'No day passes available'}
+        </h3>
+        <p className="text-zinc-400 font-medium">
+          {lang === 'es' ? 'Vuelve a consultar pronto.' : 'Check back soon.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {productos.map((p) => {
+          const cantidad = cantidades[p.id] ?? 0;
+          return (
+            <div key={p.id} className="bg-white rounded-[28px] border border-zinc-100 shadow-sm p-6 flex flex-col">
+              <div className="flex justify-between items-start mb-2 gap-3">
+                <h3 className="text-xl font-black tracking-tight">{p.nombre}</h3>
+                <span className="text-xl font-black text-primary whitespace-nowrap">${p.precio}</span>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed mb-4 flex-1">{p.descripcion}</p>
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-zinc-50">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                  {p.tipoHuesped === 'nino' ? (lang === 'es' ? 'Niño' : 'Child') : (lang === 'es' ? 'Adulto' : 'Adult')}
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCantidad(p.id, -1)}
+                    disabled={cantidad === 0}
+                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed font-bold"
+                    aria-label="Restar"
+                  >−</button>
+                  <span className="w-6 text-center font-bold">{cantidad}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCantidad(p.id, 1)}
+                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary font-bold"
+                    aria-label="Sumar"
+                  >+</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {items.length > 0 && (
+        <div className="sticky bottom-4 bg-dark text-white rounded-[28px] p-5 lg:p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">
+              {lang === 'es' ? 'Total' : 'Total'}
+            </p>
+            <p className="text-3xl font-black tracking-tighter">${total.toFixed(2)}</p>
+          </div>
+          <button
+            onClick={() => setReservaOpen(true)}
+            className="bg-primary hover:bg-primary/90 text-white font-black px-8 py-4 rounded-2xl uppercase tracking-widest text-[11px] flex items-center gap-2"
+          >
+            {lang === 'es' ? 'Continuar' : 'Continue'} <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {reservaOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setReservaOpen(false)}>
+          <div className="bg-white rounded-[28px] p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-black tracking-tight">
+                {lang === 'es' ? 'Confirma tu pasadía' : 'Confirm your day pass'}
+              </h3>
+              <button onClick={() => setReservaOpen(false)} aria-label="Cerrar" className="text-zinc-400 hover:text-dark">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
+                  {lang === 'es' ? 'Fecha de visita' : 'Visit date'}
+                </span>
+                <input
+                  type="date"
+                  value={fecha}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setFecha(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm font-bold outline-none focus:border-primary"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
+                  {lang === 'es' ? 'Nombre completo' : 'Full name'}
+                </span>
+                <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" required />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">Email</span>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" required />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
+                  {lang === 'es' ? 'Teléfono' : 'Phone'}
+                </span>
+                <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
+                  {lang === 'es' ? 'Notas' : 'Notes'}
+                </span>
+                <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
+              </label>
+
+              <div className="bg-zinc-50 rounded-2xl p-4 text-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+                  {lang === 'es' ? 'Resumen' : 'Summary'}
+                </p>
+                {items.map((it) => (
+                  <div key={it.producto.id} className="flex justify-between mb-1">
+                    <span>{it.cantidad} × {it.producto.nombre}</span>
+                    <span className="font-bold">${(it.producto.precio * it.cantidad).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between pt-2 mt-2 border-t border-zinc-200 font-black">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={confirmar}
+                disabled={submitting}
+                className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px]"
+              >
+                {submitting ? (lang === 'es' ? 'Procesando…' : 'Processing…') : (lang === 'es' ? 'Confirmar reserva' : 'Confirm booking')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

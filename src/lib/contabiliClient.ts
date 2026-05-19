@@ -110,3 +110,49 @@ export async function crearReserva(input: ReservaInput): Promise<{
     idioma: input.idioma ?? "es",
   });
 }
+
+// ============================================================
+// PASADÍAS
+// ============================================================
+export interface PasadiaProducto {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  tipoHuesped: "adulto" | "nino" | string;
+  precio: number;
+  incluyeAlmuerzo: boolean;
+  incluyeDesayuno: boolean;
+  incluyeBebidas: boolean;
+  imagenUrl: string | null;
+}
+
+export async function listarPasadias(): Promise<PasadiaProducto[]> {
+  return trpcQuery("bookingPublic.pasadiasCatalogo", {});
+}
+
+export interface PasadiaReservaInput {
+  fecha: string;
+  nombre: string;
+  email: string;
+  telefono?: string;
+  pais?: string;
+  horaLlegada?: string;
+  items: Array<{ productoId: string; cantidad: number }>;
+  notas?: string;
+  idioma?: "es" | "en" | "pt";
+}
+
+export async function crearReservaPasadia(input: PasadiaReservaInput): Promise<{
+  ok: boolean;
+  codigo: string;
+  reservaId: string;
+  clienteId: string;
+  total: number;
+}> {
+  return trpcMutation("bookingPublic.pasadiasCrearReserva", {
+    ...input,
+    pais: input.pais ?? "PA",
+    idioma: input.idioma ?? "es",
+  });
+}
