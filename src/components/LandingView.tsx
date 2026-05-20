@@ -221,17 +221,16 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
                   The logo carries its own wordmark, so we don't repeat the
                   hotel name beside it. */}
               <div className="mb-8 animate-in zoom-in duration-700">
-                <div
-                  className="bg-white rounded-3xl shadow-2xl shadow-dark/10 border border-white/60 flex items-center justify-center overflow-hidden p-4"
-                  style={{ width: 250, height: 250 }}
-                >
+                {/* Contenedor del logo: tamaño responsive y padding generoso para
+                    que el logo del cliente entre completo sin recortes. El
+                    object-contain garantiza que se ajuste sin distorsión y la
+                    imagen no fija dimensiones nativas (deja que el contenedor mande). */}
+                <div className="bg-white rounded-3xl shadow-2xl shadow-dark/10 border border-white/60 flex items-center justify-center overflow-hidden p-6 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56">
                   {initialContent.logo ? (
                     <img
                       src={initialContent.logo}
-                      width={250}
-                      height={250}
                       alt="Hotel Candy Rose"
-                      className="max-w-full max-h-full object-contain"
+                      className="block w-full h-full object-contain"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).style.display = 'none';
                       }}
