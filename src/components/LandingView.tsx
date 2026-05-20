@@ -196,8 +196,11 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Section
+          Tamaño contenido (min-h pero no h-screen) para que entre a 100% de zoom
+          sin obligar al usuario a hacer scroll o achicar el zoom del navegador.
+          Tipografía y espaciados reducidos respecto al diseño original. */}
+      <section className="relative min-h-[600px] lg:min-h-[640px] flex items-center justify-center overflow-hidden py-16 lg:py-20">
         {/* Abstract Beach Vibes Background */}
         <div className="absolute inset-0 z-0">
            {initialContent.heroBg ? (
@@ -214,18 +217,11 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
            <div className="absolute top-40 right-40 w-96 h-96 bg-secondary/10 rounded-full blur-[100px]"></div>
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-20 items-center">
+        <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
            <div className="flex flex-col items-start text-left">
-              {/* Hero brand block. The image goes through the backend storage
-                  proxy, so we never depend on a stale presigned MinIO URL.
-                  The logo carries its own wordmark, so we don't repeat the
-                  hotel name beside it. */}
-              <div className="mb-8 animate-in zoom-in duration-700">
-                {/* Contenedor del logo: tamaño responsive y padding generoso para
-                    que el logo del cliente entre completo sin recortes. El
-                    object-contain garantiza que se ajuste sin distorsión y la
-                    imagen no fija dimensiones nativas (deja que el contenedor mande). */}
-                <div className="bg-white rounded-3xl shadow-2xl shadow-dark/10 border border-white/60 flex items-center justify-center overflow-hidden p-6 w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56">
+              {/* Logo del hotel. object-contain + ancho fluido = entra cualquier proporción. */}
+              <div className="mb-5 animate-in zoom-in duration-700">
+                <div className="bg-white rounded-2xl shadow-xl shadow-dark/10 border border-white/60 flex items-center justify-center overflow-hidden p-4 w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36">
                   {initialContent.logo ? (
                     <img
                       src={initialContent.logo}
@@ -236,36 +232,38 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
                       }}
                     />
                   ) : (
-                    <span className="text-7xl">🏨</span>
+                    <span className="text-5xl">🏨</span>
                   )}
                 </div>
               </div>
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-full mb-8 tracking-[0.3em] uppercase animate-in slide-in-from-left duration-700">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-[10px] font-black px-3 py-1.5 rounded-full mb-5 tracking-[0.3em] uppercase animate-in slide-in-from-left duration-700">
                   <MapPin className="w-3 h-3 fill-current" /> {initialContent.contactLocation}
               </div>
-              <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-dark mb-8 leading-[0.9] max-w-2xl animate-in slide-in-from-left duration-1000 delay-200">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-dark mb-5 leading-[1.05] max-w-2xl animate-in slide-in-from-left duration-1000 delay-200">
                  {t.heroTitle}
               </h1>
-              <p className="text-lg text-zinc-500 max-w-lg mb-12 font-medium leading-relaxed animate-in slide-in-from-left duration-1000 delay-500">
+              <p className="text-base lg:text-lg text-zinc-500 max-w-lg mb-8 font-medium leading-relaxed animate-in slide-in-from-left duration-1000 delay-500">
                  {t.heroSub}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-700">
-                  <Link href="/booking" className="bg-primary hover:bg-orange-600 text-white font-black px-10 py-5 rounded-2xl shadow-2xl shadow-primary/30 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-3 group">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-700">
+                  <Link href="/booking" className="bg-primary hover:bg-orange-600 text-white font-black px-7 py-3.5 rounded-2xl shadow-xl shadow-primary/30 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2 group">
                      {t.bookNow} <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
                   </Link>
-                  <Link href="#rooms" className="bg-white border border-zinc-100 hover:border-primary text-dark font-black px-10 py-5 rounded-2xl shadow-sm transition-all uppercase tracking-widest text-xs flex items-center justify-center">
+                  <Link href="#rooms" className="bg-white border border-zinc-100 hover:border-primary text-dark font-black px-7 py-3.5 rounded-2xl shadow-sm transition-all uppercase tracking-widest text-xs flex items-center justify-center">
                      {t.rooms}
                   </Link>
               </div>
            </div>
 
+           {/* Bloque de imágenes — reducido para que el hero no se desborde a 100% zoom.
+               aspect-[3/4] en vez de [4/5], esquinas un poco menos exageradas. */}
            <div className="hidden lg:block relative animate-in zoom-in duration-1000 delay-300">
-              <div className={`relative z-10 w-full aspect-[4/5] bg-zinc-200 rounded-[60px] overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-all duration-700 border-8 border-white ${scrolled ? 'opacity-90' : 'opacity-100'}`}>
+              <div className={`relative z-10 w-full max-w-[420px] aspect-[3/4] bg-zinc-200 rounded-[40px] overflow-hidden shadow-xl rotate-3 hover:rotate-0 transition-all duration-700 border-[6px] border-white ${scrolled ? 'opacity-90' : 'opacity-100'}`}>
                  <img src={initialContent.heroBg || 'https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1000&auto=format&fit=crop'} alt="Hotel" className="w-full h-full object-cover" />
               </div>
-              <div className="absolute -bottom-10 -left-10 z-20 w-1/2 aspect-square bg-white p-4 rounded-[40px] shadow-2xl -rotate-6">
-                 <div className="w-full h-full bg-zinc-100 rounded-[30px] overflow-hidden">
+              <div className="absolute -bottom-6 -left-6 z-20 w-[45%] aspect-square bg-white p-3 rounded-[28px] shadow-xl -rotate-6">
+                 <div className="w-full h-full bg-zinc-100 rounded-[20px] overflow-hidden">
                     <img src={initialContent.aboutImg || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1000&auto=format&fit=crop'} alt="Details" className="w-full h-full object-cover" />
                  </div>
               </div>
