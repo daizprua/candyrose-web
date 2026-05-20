@@ -8,7 +8,31 @@ import {
   ShieldCheck, XCircle, Utensils, Waves,
 } from '@/lib/icons';
 import { getAvailableRooms, createGuestReservation, validateBookingDates } from '@/lib/bookingService';
-import { listarPasadias, crearReservaPasadia, type PasadiaProducto } from '@/lib/contabiliClient';
+import type { PasadiaProducto, PasadiaReservaInput } from '@/lib/contabiliClient';
+
+// Wrappers que pasan por los route handlers locales (/api/booking/*) en vez
+// de hablar directo con Contabili. El token vive solo en el servidor.
+async function listarPasadiasFetch(): Promise<PasadiaProducto[]> {
+  const res = await fetch('/api/booking/pasadias-catalogo', { cache: 'no-store' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as { productos: PasadiaProducto[] };
+  return data.productos ?? [];
+}
+async function crearReservaPasadiaFetch(input: PasadiaReservaInput) {
+  const res = await fetch('/api/booking/pasadias-reservar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+    throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<{ ok: boolean; codigo: string; reservaId: string; clienteId: string; total: number }>;
+}
 import { useTranslation } from '@/i18n/useTranslation';
 import { LANDING_CONTENT } from '@/content/landing';
 
@@ -106,7 +130,7 @@ function BookingPageInner() {
     let cancelled = false;
     setPasadiasLoading(true);
     setPasadiasError('');
-    listarPasadias()
+    listarPasadiasFetch()
       .then((data) => {
         if (cancelled) return;
         setPasadias(data);
@@ -618,7 +642,7 @@ function PasadiasPanel({
     }
     try {
       setSubmitting(true);
-      const res = await crearReservaPasadia({
+      const res = await crearReservaPasadiaFetch({
         fecha,
         nombre,
         email,

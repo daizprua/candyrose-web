@@ -1,9 +1,13 @@
 /**
- * Booking Service — wrapper sobre contabiliClient para que el código del
- * landing y motor de reservas conserve la API original.
+ * Booking Service — wrapper para el código de landing/motor de reservas.
+ *
+ * Los componentes client-side llaman estas funciones, que internamente usan
+ * los route handlers locales de Next (`/api/booking/*`). Esos handlers
+ * corren en el servidor y tienen acceso al PUBLIC_BOOKING_TOKEN. Esto
+ * evita exponer el token en el bundle del navegador.
  */
 
-import { consultarDisponibilidad, crearReserva, type DisponibilidadTipo } from "./contabiliClient";
+import type { DisponibilidadTipo } from "./contabiliClient";
 
 export interface AvailableRoom {
   id: string;
@@ -67,12 +71,18 @@ export async function getAvailableRooms(
   checkOutDate: string,
   guests = 1,
 ): Promise<AvailableRoom[]> {
-  const tipos = await consultarDisponibilidad({
+  const qs = new URLSearchParams({
     checkIn: checkInDate,
     checkOut: checkOutDate,
-    huespedes: guests,
-  });
-  return tipos.map(mapDispToRoom);
+    huespedes: String(guests),
+  }).toString();
+  const res = await fetch(`/api/booking/disponibilidad?${qs}`, { cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+    throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as { tipos: DisponibilidadTipo[] };
+  return (data.tipos ?? []).map(mapDispToRoom);
 }
 
 export async function createGuestReservation(b: BookingRequest): Promise<{
@@ -81,17 +91,26 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
   reservaId: string;
   clienteId: string;
 }> {
-  return crearReserva({
-    tipoHabitacionId: b.roomId,
-    checkIn: b.checkInDate,
-    checkOut: b.checkOutDate,
-    adultos: b.adults ?? 2,
-    ninos: b.children ?? 0,
-    nombre: b.guestName,
-    email: b.guestEmail,
-    telefono: b.guestPhone,
-    notas: b.notes,
+  const res = await fetch(`/api/booking/reservar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tipoHabitacionId: b.roomId,
+      checkIn: b.checkInDate,
+      checkOut: b.checkOutDate,
+      adultos: b.adults ?? 2,
+      ninos: b.children ?? 0,
+      nombre: b.guestName,
+      email: b.guestEmail,
+      telefono: b.guestPhone,
+      notas: b.notes,
+    }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+    throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  return res.json();
 }
 
 export function validateBookingDates(checkInDate: string, checkOutDate: string) {
