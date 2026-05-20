@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Widget de Cloudflare Turnstile. Carga el script de Cloudflare bajo demanda
@@ -14,6 +14,11 @@ import { useEffect, useRef } from 'react';
  * Si la site key no está configurada, el widget no se monta y se llama
  * onVerify("dev-skip") inmediatamente — modo desarrollo. En producción
  * SIEMPRE debe estar configurada.
+ *
+ * IMPORTANTE: usamos refs para las callbacks para que el useEffect NO se
+ * re-dispare cuando el padre re-renderiza (cada render crea funciones
+ * nuevas). Si se re-disparaba, el widget quedaba en loop de mount/unmount
+ * con "Verifying..." infinito.
  */
 declare global {
   interface Window {
@@ -34,30 +39,43 @@ export function TurnstileWidget({ onVerify, onExpire }: {
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const onVerifyRef = useRef(onVerify);
+  const onExpireRef = useRef(onExpire);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
+
+  // Mantener refs actualizadas sin disparar el efecto principal
+  useEffect(() => { onVerifyRef.current = onVerify; }, [onVerify]);
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
 
   useEffect(() => {
     if (!siteKey) {
       // Sin site key configurada — modo desarrollo. Devolvemos token dummy.
-      onVerify("dev-skip");
+      onVerifyRef.current("dev-skip");
       return;
     }
     if (!containerRef.current) return;
 
     const mount = () => {
       if (!window.turnstile || !containerRef.current) return;
-      // Limpiar instancia previa si quedó algo (StrictMode / re-render)
-      if (widgetIdRef.current) {
-        try { window.turnstile.remove(widgetIdRef.current); } catch { /* ignore */ }
-        widgetIdRef.current = null;
+      if (widgetIdRef.current) return; // ya montado
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          callback: (token: string) => {
+            setErrorCode(null);
+            onVerifyRef.current(token);
+          },
+          'expired-callback': () => onExpireRef.current?.(),
+          'error-callback': (code: string) => {
+            setErrorCode(code || 'unknown');
+            onExpireRef.current?.();
+          },
+          theme: 'light',
+        });
+      } catch (e) {
+        setErrorCode(`mount: ${(e as Error).message}`);
       }
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        callback: (token: string) => onVerify(token),
-        'expired-callback': () => onExpire?.(),
-        'error-callback': () => onExpire?.(),
-        theme: 'light',
-      });
     };
 
     // Cargar script de Cloudflare si no está
@@ -67,12 +85,12 @@ export function TurnstileWidget({ onVerify, onExpire }: {
       script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit";
       script.async = true;
       script.defer = true;
+      script.onerror = () => setErrorCode("script-load-failed");
       window.onTurnstileLoad = mount;
       document.head.appendChild(script);
     } else if (window.turnstile) {
       mount();
     } else {
-      // Script existe pero turnstile aún no listo: esperar
       window.onTurnstileLoad = mount;
     }
 
@@ -82,7 +100,9 @@ export function TurnstileWidget({ onVerify, onExpire }: {
         widgetIdRef.current = null;
       }
     };
-  }, [siteKey, onVerify, onExpire]);
+    // Dependencias: solo siteKey. onVerify/onExpire se acceden via ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siteKey]);
 
   if (!siteKey) {
     return (
@@ -91,5 +111,14 @@ export function TurnstileWidget({ onVerify, onExpire }: {
       </div>
     );
   }
-  return <div ref={containerRef} />;
+  return (
+    <div>
+      <div ref={containerRef} />
+      {errorCode && (
+        <div className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded p-2 mt-2">
+          Captcha error: <code>{errorCode}</code>. Recarga la página o verifica que el dominio esté autorizado en Cloudflare Turnstile.
+        </div>
+      )}
+    </div>
+  );
 }
