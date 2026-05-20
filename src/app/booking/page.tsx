@@ -152,40 +152,32 @@ function BookingPageInner() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Fetch CMS config and Available rooms
+  // Pre-validación de fechas + consulta de disponibilidad. Separamos los dos
+  // errores: si las fechas son inválidas, mensaje "Revisa las fechas"; si la
+  // API falla, mensaje genérico de error (no confundir al huésped).
   useEffect(() => {
+    if (!checkInDate || !checkOutDate) return;
     const fetchData = async () => {
       setLoading(true);
       setError('');
+      const validation = validateBookingDates(checkInDate, checkOutDate);
+      if (!validation.valid) {
+        setError(validation.error ?? '');
+        setRooms([]);
+        setLoading(false);
+        return;
+      }
       try {
-        // Fetch CMS Hero
-        const configRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/config/cms_bookingHero`);
-        if (configRes.ok) {
-           const config = await configRes.json();
-           if (config.value) setBookingHero(config.value);
-        }
-
-        const validation = validateBookingDates(checkInDate, checkOutDate);
-        if (!validation.valid) {
-          setError(validation.error ?? '');
-          setRooms([]);
-          setLoading(false);
-          return;
-        }
-
         const availableRooms = await getAvailableRooms(checkInDate, checkOutDate, guests);
         setRooms(availableRooms);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching data');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error consultando disponibilidad');
         setRooms([]);
       } finally {
         setLoading(false);
       }
     };
-
-    if (checkInDate && checkOutDate) {
-      fetchData();
-    }
+    fetchData();
   }, [checkInDate, checkOutDate, guests]);
 
   const handleBookRoom = (room: AvailableRoom) => {
@@ -384,24 +376,44 @@ function BookingPageInner() {
 
          {activeTab === 'rooms' && !loading && filteredRooms.length === 0 && (
             <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
-               {error ? (
-                  <>
-                     <h3 className="text-2xl font-black mb-2 text-primary">
-                        {language === 'es' ? 'Revisa las fechas' : 'Check your dates'}
-                     </h3>
-                     <p className="text-zinc-500 font-medium max-w-md mx-auto">
-                        {language === 'es'
-                           ? 'La fecha de salida debe ser al menos un día después de la fecha de entrada.'
-                           : 'Check-out must be at least one day after check-in.'}
-                     </p>
-                  </>
-               ) : (
-                  <>
-                     <span className="text-5xl block mb-6">🏝️</span>
-                     <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
-                     <p className="text-zinc-400 font-medium">Intenta con otras fechas o ajusta los huéspedes.</p>
-                  </>
-               )}
+               {(() => {
+                  // Distinguimos tres estados visuales:
+                  //  1. Error de validación de fechas (mensaje viene de validateBookingDates)
+                  //  2. Error genérico de la API (red caída, 5xx, etc.)
+                  //  3. Sin error pero no hay disponibilidad para las fechas válidas
+                  const esErrorFecha = error && /check-out|check-in|salida|entrada/i.test(error);
+                  if (esErrorFecha) {
+                     return (
+                        <>
+                           <h3 className="text-2xl font-black mb-2 text-primary">
+                              {language === 'es' ? 'Revisa las fechas' : 'Check your dates'}
+                           </h3>
+                           <p className="text-zinc-500 font-medium max-w-md mx-auto">
+                              {language === 'es'
+                                 ? 'La fecha de salida debe ser al menos un día después de la fecha de entrada.'
+                                 : 'Check-out must be at least one day after check-in.'}
+                           </p>
+                        </>
+                     );
+                  }
+                  if (error) {
+                     return (
+                        <>
+                           <h3 className="text-2xl font-black mb-2 text-red-600">
+                              {language === 'es' ? 'No pudimos cargar la disponibilidad' : 'Could not load availability'}
+                           </h3>
+                           <p className="text-zinc-500 font-medium max-w-md mx-auto">{error}</p>
+                        </>
+                     );
+                  }
+                  return (
+                     <>
+                        <span className="text-5xl block mb-6">🏝️</span>
+                        <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
+                        <p className="text-zinc-400 font-medium">Intenta con otras fechas o ajusta los huéspedes.</p>
+                     </>
+                  );
+               })()}
             </div>
          )}
 
