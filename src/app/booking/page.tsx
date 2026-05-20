@@ -430,59 +430,70 @@ function BookingPageInner() {
          )}
 
          {activeTab === 'rooms' && (
-         <div className="grid grid-cols-1 gap-12 max-w-6xl mx-auto">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {filteredRooms.map((room) => (
-              <div key={room.id} className="group bg-white rounded-[40px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] transition-all duration-500 border border-zinc-50 flex flex-col lg:flex-row">
-                 <div className="lg:w-2/5 h-[300px] lg:h-auto relative overflow-hidden">
-                    <img src={room.image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1000'} alt={room.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-                    <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary">
-                       {activeTab === 'rooms' ? 'Boutique' : 'All Day'}
+              <div
+                key={room.id}
+                className="group bg-white rounded-[28px] overflow-hidden shadow-[0_12px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 border border-zinc-50 flex flex-col"
+              >
+                 {/* Imagen arriba — proporción consistente para que el grid quede parejo */}
+                 <div className="aspect-[4/3] relative overflow-hidden">
+                    <img
+                      src={room.image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1000'}
+                      alt={room.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                    />
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-primary">
+                       Boutique
                     </div>
                  </div>
-                 <div className="flex-1 p-8 lg:p-12 flex flex-col justify-between">
-                    <div>
-                        <div className="flex justify-between items-start mb-4">
-                           <h2 className="text-3xl font-black tracking-tight group-hover:text-primary transition-colors">{room.name || room.type}</h2>
-                        </div>
-                        <p className="text-zinc-400 font-medium leading-relaxed mb-8 max-w-lg">{room.description}</p>
-                        
-                        <div className="flex flex-wrap gap-6 mb-10">
-                           {room.amenities.slice(0, 4).map(a => (
-                              <div key={a} className="flex items-center gap-2 text-[10px] font-black text-zinc-300 uppercase tracking-widest">
-                                 {a === 'Wifi' && <Wifi className="w-3.5 h-3.5" />}
-                                 {a === 'AC' && <Wind className="w-3.5 h-3.5" />}
-                                 {a === 'Coffee' && <Coffee className="w-3.5 h-3.5" />}
-                                 {a}
-                              </div>
-                           ))}
-                        </div>
-                    </div>
 
-                    <div className="flex items-center justify-between pt-8 border-t border-zinc-50">
-                       <div>
-                          <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest mb-1">{room.nights} {t('booking.nights')}</p>
-                          {/* Show the applied rate plan as a small primary chip
-                              so the guest knows why the price is what it is —
-                              "Promo Verano -15%" feels different from a price
-                              that just changed without explanation. */}
-                          {room.appliedRatePlan && (
-                            <p className="inline-flex items-center gap-1.5 text-[9px] font-black text-primary bg-orange-50 border border-orange-100 px-2 py-1 rounded-full uppercase tracking-widest mb-2">
-                              {room.appliedRatePlan.name}
-                              {room.appliedRatePlan.discountPct ? ` · -${room.appliedRatePlan.discountPct}%` : ''}
-                            </p>
-                          )}
-                          <div className="flex items-baseline gap-2">
-                             {/* Strike-through the base rate when a discount won so the saving is visible. */}
-                             {room.baseRate && room.appliedRatePlan && room.baseRate > room.pricePerNight && (
-                               <span className="text-base font-black text-zinc-300 line-through tracking-tighter">${(room.baseRate * room.nights).toFixed(0)}</span>
-                             )}
-                             <span className="text-4xl font-black text-dark tracking-tighter">${room.totalPrice}</span>
-                             <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Total</span>
+                 {/* Contenido */}
+                 <div className="p-6 flex-1 flex flex-col">
+                    <h2 className="text-xl font-black tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                       {room.name || room.type}
+                    </h2>
+                    <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-4 line-clamp-3">{room.description}</p>
+
+                    {room.amenities.length > 0 && (
+                       <div className="flex flex-wrap gap-3 mb-5">
+                          {room.amenities.slice(0, 4).map((a) => (
+                             <div key={a} className="flex items-center gap-1 text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                                {a === 'Wifi' && <Wifi className="w-3 h-3" />}
+                                {a === 'AC' && <Wind className="w-3 h-3" />}
+                                {a === 'Coffee' && <Coffee className="w-3 h-3" />}
+                                {a}
+                             </div>
+                          ))}
+                       </div>
+                    )}
+
+                    {/* Precio + CTA al final de la card */}
+                    <div className="mt-auto pt-4 border-t border-zinc-100">
+                       {room.appliedRatePlan && (
+                          <p className="inline-flex items-center gap-1 text-[9px] font-black text-primary bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full uppercase tracking-widest mb-2">
+                             {room.appliedRatePlan.name}
+                             {room.appliedRatePlan.discountPct ? ` · -${room.appliedRatePlan.discountPct}%` : ''}
+                          </p>
+                       )}
+                       <div className="flex items-end justify-between gap-3 mb-3">
+                          <div>
+                             <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                                {room.nights} {t('booking.nights')}
+                             </p>
+                             <div className="flex items-baseline gap-1.5">
+                                {room.baseRate && room.appliedRatePlan && room.baseRate > room.pricePerNight && (
+                                   <span className="text-xs font-black text-zinc-300 line-through tracking-tighter">
+                                      ${(room.baseRate * room.nights).toFixed(0)}
+                                   </span>
+                                )}
+                                <span className="text-2xl font-black text-dark tracking-tighter">${room.totalPrice}</span>
+                             </div>
                           </div>
                        </div>
-                       <button 
+                       <button
                           onClick={() => handleBookRoom(room)}
-                          className="bg-dark hover:bg-primary text-white font-black px-10 py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-[11px] flex items-center gap-3 group/btn"
+                          className="w-full bg-dark hover:bg-primary text-white font-black px-5 py-3 rounded-xl shadow-md transition-all uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 group/btn"
                        >
                           {t('booking.selectRoom')} <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                        </button>
