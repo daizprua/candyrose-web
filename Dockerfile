@@ -9,6 +9,11 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Las NEXT_PUBLIC_* deben estar disponibles AL HACER BUILD porque Next las
+# inlina en el bundle del cliente. Las recibimos como ARG desde compose y
+# las exportamos a ENV para que `next build` las vea.
+ARG NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
 RUN npm run build
 
 FROM base AS runner

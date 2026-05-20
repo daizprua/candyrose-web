@@ -3,12 +3,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* debe pasarse como build-arg para que Next la inline
+        # en el bundle del browser (se evalúan al hacer `next build`).
+        NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
     environment:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: "3000"
       CONTABILI_API_URL: ${CONTABILI_API_URL}
       PUBLIC_BOOKING_TOKEN: ${PUBLIC_BOOKING_TOKEN}
+      # Mismo valor en runtime por si algún render server-side la necesita.
+      NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY}
     networks:
       - dokploy-network
     restart: unless-stopped
