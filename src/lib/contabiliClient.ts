@@ -63,16 +63,26 @@ export interface DisponibilidadTipo {
   totalHabitaciones: number;
 }
 
-export interface ReservaInput {
+export type TipoDocumento = "cedula_pa" | "pasaporte" | "otro";
+
+/** Campos obligatorios del huésped (compartidos entre reserva habitación y pasadía). */
+export interface HuespedInput {
+  nombre: string;
+  email: string;
+  telefono: string;
+  pais: string;
+  documentoTipo: TipoDocumento;
+  documentoNumero: string;
+  /** Token devuelto por Cloudflare Turnstile. */
+  captchaToken: string;
+}
+
+export interface ReservaInput extends HuespedInput {
   tipoHabitacionId: string;
   checkIn: string;
   checkOut: string;
   adultos: number;
   ninos?: number;
-  nombre: string;
-  email: string;
-  telefono?: string;
-  pais?: string;
   notas?: string;
   idioma?: "es" | "en" | "pt";
 }
@@ -131,12 +141,8 @@ export async function listarPasadias(): Promise<PasadiaProducto[]> {
   return trpcQuery("bookingPublic.pasadiasCatalogo", {});
 }
 
-export interface PasadiaReservaInput {
+export interface PasadiaReservaInput extends HuespedInput {
   fecha: string;
-  nombre: string;
-  email: string;
-  telefono?: string;
-  pais?: string;
   horaLlegada?: string;
   items: Array<{ productoId: string; cantidad: number }>;
   notas?: string;

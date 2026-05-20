@@ -39,10 +39,14 @@ export interface BookingRequest {
   checkOutDate: string;
   guestName: string;
   guestEmail: string;
-  guestPhone?: string;
+  guestPhone: string;
   adults?: number;
   children?: number;
   notes?: string;
+  pais: string;
+  documentoTipo: "cedula_pa" | "pasaporte" | "otro";
+  documentoNumero: string;
+  captchaToken: string;
 }
 
 const DEFAULT_IMG = "/logo.jpg";
@@ -103,6 +107,10 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
       nombre: b.guestName,
       email: b.guestEmail,
       telefono: b.guestPhone,
+      pais: b.pais,
+      documentoTipo: b.documentoTipo,
+      documentoNumero: b.documentoNumero,
+      captchaToken: b.captchaToken,
       notas: b.notes,
     }),
   });

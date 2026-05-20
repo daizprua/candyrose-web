@@ -8,7 +8,9 @@ import {
   ShieldCheck, XCircle, Utensils, Waves,
 } from '@/lib/icons';
 import { getAvailableRooms, createGuestReservation, validateBookingDates } from '@/lib/bookingService';
-import type { PasadiaProducto, PasadiaReservaInput } from '@/lib/contabiliClient';
+import type { PasadiaProducto, PasadiaReservaInput, HuespedInput } from '@/lib/contabiliClient';
+import { HuespedFormFields, huespedVacio, validarHuesped, type HuespedData } from '@/components/HuespedFormFields';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 // Wrappers que pasan por los route handlers locales (/api/booking/*) en vez
 // de hablar directo con Contabili. El token vive solo en el servidor.
@@ -105,14 +107,11 @@ function BookingPageInner() {
   const [activeTab, setActiveTab] = useState<BookingTab>('rooms');
   const [bookingHero, setBookingHero] = useState('');
 
-  const [checkoutData, setCheckoutData] = useState({
-    guestName: '',
-    guestEmail: '',
-    guestPhone: '',
-    adults: 2,
-    children: 0,
-    notes: '',
-  });
+  const [huesped, setHuesped] = useState<HuespedData>(huespedVacio());
+  const [notas, setNotas] = useState('');
+  const [adultos, setAdultos] = useState(2);
+  const [ninos, setNinos] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState<string>('');
 
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -183,13 +182,19 @@ function BookingPageInner() {
   const handleBookRoom = (room: AvailableRoom) => {
     setSelectedRoom(room);
     setShowCheckoutForm(true);
-    setCheckoutData({ ...checkoutData, adults: guests });
+    setAdultos(guests);
   };
 
   const handleSubmitBooking = async () => {
     if (!selectedRoom || submitting) return;
-    if (!checkoutData.guestName.trim() || !checkoutData.guestPhone.trim()) {
-      setToast({ type: 'error', text: language === 'es' ? 'Nombre y teléfono son requeridos' : 'Name and phone are required' });
+    const lang: 'es' | 'en' = language === 'en' ? 'en' : 'es';
+    const errorMsg = validarHuesped(huesped, lang);
+    if (errorMsg) {
+      setToast({ type: 'error', text: errorMsg });
+      return;
+    }
+    if (!captchaToken) {
+      setToast({ type: 'error', text: lang === 'es' ? 'Completa el captcha' : 'Complete the captcha' });
       return;
     }
     try {
@@ -198,18 +203,26 @@ function BookingPageInner() {
         roomId: selectedRoom.id,
         checkInDate,
         checkOutDate,
-        guestName: checkoutData.guestName,
-        guestEmail: checkoutData.guestEmail,
-        guestPhone: checkoutData.guestPhone,
-        adults: checkoutData.adults,
-        children: checkoutData.children,
-        notes: checkoutData.notes,
+        guestName: huesped.nombre,
+        guestEmail: huesped.email,
+        guestPhone: huesped.telefono,
+        adults: adultos,
+        children: ninos,
+        notes: notas,
+        pais: huesped.pais,
+        documentoTipo: huesped.documentoTipo,
+        documentoNumero: huesped.documentoNumero,
+        captchaToken,
       });
       setToast({ type: 'success', text: `${t('booking.bookingConfirmed')} · ${result.codigo}` });
       setShowCheckoutForm(false);
       setSelectedRoom(null);
-    } catch (err: any) {
-      setToast({ type: 'error', text: `${t('common.error')}: ${err.message}` });
+      setHuesped(huespedVacio());
+      setNotas('');
+      setCaptchaToken('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error';
+      setToast({ type: 'error', text: `${t('common.error')}: ${msg}` });
     } finally {
       setSubmitting(false);
     }
@@ -232,25 +245,45 @@ function BookingPageInner() {
     <div className="min-h-screen bg-[#FDFCFB] text-dark font-sans">
       {/* Checkout Form Modal */}
       {showCheckoutForm && selectedRoom && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] p-8 max-w-md w-full shadow-2xl overflow-hidden relative">
-             <button onClick={() => setShowCheckoutForm(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-dark transition-colors"><X className="w-6 h-6" /></button>
-             <h2 className="text-2xl font-black mb-6">{t('booking.checkout')}</h2>
-             <div className="bg-zinc-50 p-6 rounded-2xl mb-6 border border-zinc-100">
-                <p className="font-black text-lg text-dark">{selectedRoom.name || selectedRoom.type}</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300 overflow-y-auto">
+          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl relative my-auto">
+             <button onClick={() => setShowCheckoutForm(false)} className="absolute top-5 right-5 text-zinc-400 hover:text-dark transition-colors" aria-label="Cerrar">
+               <X className="w-5 h-5" />
+             </button>
+             <h2 className="text-2xl font-black mb-5">{t('booking.checkout')}</h2>
+             <div className="bg-zinc-50 p-5 rounded-2xl mb-5 border border-zinc-100">
+                <p className="font-black text-base text-dark">{selectedRoom.name || selectedRoom.type}</p>
                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 mt-1 uppercase tracking-widest">
                    <Calendar className="w-3 h-3" /> {checkInDate} - {checkOutDate} ({nights} {t('booking.nights')})
                 </div>
-                <p className="text-2xl font-black text-primary mt-4">${selectedRoom.totalPrice}</p>
+                <p className="text-2xl font-black text-primary mt-3">${selectedRoom.totalPrice}</p>
              </div>
-             <div className="space-y-4">
-                <label htmlFor="booking-name" className="sr-only">{t('booking.fullName')}</label>
-                <input id="booking-name" type="text" required autoComplete="name" aria-required="true" placeholder={t('booking.fullName')} className="w-full p-4 bg-zinc-50 rounded-xl border border-zinc-100 text-sm font-bold" value={checkoutData.guestName} onChange={e => setCheckoutData({...checkoutData, guestName: e.target.value})} />
-                <label htmlFor="booking-email" className="sr-only">{t('booking.email')}</label>
-                <input id="booking-email" type="email" autoComplete="email" placeholder={t('booking.email')} className="w-full p-4 bg-zinc-50 rounded-xl border border-zinc-100 text-sm font-bold" value={checkoutData.guestEmail} onChange={e => setCheckoutData({...checkoutData, guestEmail: e.target.value})} />
-                <label htmlFor="booking-phone" className="sr-only">{t('booking.phone')}</label>
-                <input id="booking-phone" type="tel" required autoComplete="tel" aria-required="true" placeholder={t('booking.phone')} className="w-full p-4 bg-zinc-50 rounded-xl border border-zinc-100 text-sm font-bold" value={checkoutData.guestPhone} onChange={e => setCheckoutData({...checkoutData, guestPhone: e.target.value})} />
-                <button onClick={handleSubmitBooking} disabled={submitting} aria-busy={submitting} className="w-full bg-dark text-white font-black py-5 rounded-2xl shadow-xl hover:bg-black transition-all uppercase tracking-widest text-[11px] mt-4 disabled:opacity-60 disabled:cursor-not-allowed">{submitting ? '...' : t('booking.confirmBooking')}</button>
+             <div className="space-y-3">
+                <HuespedFormFields
+                  value={huesped}
+                  onChange={setHuesped}
+                  language={language === 'en' ? 'en' : 'es'}
+                />
+                <label className="block">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
+                    {language === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}
+                  </span>
+                  <textarea
+                    value={notas}
+                    onChange={(e) => setNotas(e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+                <button
+                  onClick={handleSubmitBooking}
+                  disabled={submitting}
+                  aria-busy={submitting}
+                  className="w-full bg-dark text-white font-black py-4 rounded-2xl shadow-xl hover:bg-black transition-all uppercase tracking-widest text-[11px] mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? '...' : t('booking.confirmBooking')}
+                </button>
              </div>
           </div>
         </div>
@@ -636,10 +669,9 @@ function PasadiasPanel({
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [reservaOpen, setReservaOpen] = useState(false);
   const [fecha, setFecha] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
+  const [huesped, setHuesped] = useState<HuespedData>(huespedVacio());
   const [notas, setNotas] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const items = productos
@@ -659,17 +691,26 @@ function PasadiasPanel({
       onToast({ type: 'error', text: lang === 'es' ? 'Selecciona al menos un pasadía' : 'Pick at least one day pass' });
       return;
     }
-    if (!nombre.trim() || !email.trim()) {
-      onToast({ type: 'error', text: lang === 'es' ? 'Nombre y email son requeridos' : 'Name and email are required' });
+    const errorMsg = validarHuesped(huesped, lang);
+    if (errorMsg) {
+      onToast({ type: 'error', text: errorMsg });
+      return;
+    }
+    if (!captchaToken) {
+      onToast({ type: 'error', text: lang === 'es' ? 'Completa el captcha' : 'Complete the captcha' });
       return;
     }
     try {
       setSubmitting(true);
       const res = await crearReservaPasadiaFetch({
         fecha,
-        nombre,
-        email,
-        telefono: telefono || undefined,
+        nombre: huesped.nombre,
+        email: huesped.email,
+        telefono: huesped.telefono,
+        pais: huesped.pais,
+        documentoTipo: huesped.documentoTipo,
+        documentoNumero: huesped.documentoNumero,
+        captchaToken,
         notas: notas || undefined,
         items: items.map((it) => ({ productoId: it.producto.id, cantidad: it.cantidad })),
         idioma: lang,
@@ -677,7 +718,9 @@ function PasadiasPanel({
       onToast({ type: 'success', text: `${lang === 'es' ? 'Pasadía confirmada' : 'Day pass confirmed'} · ${res.codigo}` });
       setReservaOpen(false);
       setCantidades({});
-      setNombre(''); setEmail(''); setTelefono(''); setNotas('');
+      setHuesped(huespedVacio());
+      setNotas('');
+      setCaptchaToken('');
     } catch (err: unknown) {
       onToast({ type: 'error', text: err instanceof Error ? err.message : 'Error' });
     } finally {
@@ -776,9 +819,9 @@ function PasadiasPanel({
       )}
 
       {reservaOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setReservaOpen(false)}>
-          <div className="bg-white rounded-[28px] p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-6">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setReservaOpen(false)}>
+          <div className="bg-white rounded-[28px] p-6 sm:p-8 max-w-md w-full shadow-2xl my-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-5">
               <h3 className="text-2xl font-black tracking-tight">
                 {lang === 'es' ? 'Confirma tu pasadía' : 'Confirm your day pass'}
               </h3>
@@ -787,7 +830,7 @@ function PasadiasPanel({
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <label className="block">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
                   {lang === 'es' ? 'Fecha de visita' : 'Visit date'}
@@ -800,25 +843,12 @@ function PasadiasPanel({
                   className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm font-bold outline-none focus:border-primary"
                 />
               </label>
+
+              <HuespedFormFields value={huesped} onChange={setHuesped} language={lang} />
+
               <label className="block">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
-                  {lang === 'es' ? 'Nombre completo' : 'Full name'}
-                </span>
-                <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" required />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">Email</span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" required />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
-                  {lang === 'es' ? 'Teléfono' : 'Phone'}
-                </span>
-                <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
-              </label>
-              <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
-                  {lang === 'es' ? 'Notas' : 'Notes'}
+                  {lang === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}
                 </span>
                 <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
               </label>
@@ -838,6 +868,8 @@ function PasadiasPanel({
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>
+
+              <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
 
               <button
                 onClick={confirmar}
