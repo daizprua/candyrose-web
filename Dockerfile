@@ -2,8 +2,8 @@ FROM node:22-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json ./
-RUN npm install --no-audit --no-fund --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund --legacy-peer-deps
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
@@ -22,7 +22,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN apk add --no-cache dumb-init && \
+    addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
 # Next standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -35,4 +36,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget --spider -q http://127.0.0.1:3000/ || exit 1
 
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "server.js"]

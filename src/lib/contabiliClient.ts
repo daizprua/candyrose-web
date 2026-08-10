@@ -78,6 +78,7 @@ export interface HuespedInput {
 }
 
 export interface ReservaInput extends HuespedInput {
+  idempotencyKey: string;
   tipoHabitacionId: string;
   checkIn: string;
   checkOut: string;

@@ -112,6 +112,7 @@ function BookingPageInner() {
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string>('');
+  const [bookingRequestId, setBookingRequestId] = useState(() => crypto.randomUUID());
 
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -183,6 +184,7 @@ function BookingPageInner() {
     setSelectedRoom(room);
     setShowCheckoutForm(true);
     setAdultos(guests);
+    setBookingRequestId(crypto.randomUUID());
   };
 
   const handleSubmitBooking = async () => {
@@ -200,6 +202,7 @@ function BookingPageInner() {
     try {
       setSubmitting(true);
       const result = await createGuestReservation({
+        idempotencyKey: bookingRequestId,
         roomId: selectedRoom.id,
         checkInDate,
         checkOutDate,
@@ -220,6 +223,7 @@ function BookingPageInner() {
       setHuesped(huespedVacio());
       setNotas('');
       setCaptchaToken('');
+      setBookingRequestId(crypto.randomUUID());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error';
       setToast({ type: 'error', text: `${t('common.error')}: ${msg}` });

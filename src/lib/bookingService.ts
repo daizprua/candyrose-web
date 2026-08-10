@@ -34,6 +34,7 @@ export interface AvailableRoom {
 }
 
 export interface BookingRequest {
+  idempotencyKey: string;
   roomId: string; // en realidad es tipoHabitacionId — mantenemos nombre por compat
   checkInDate: string;
   checkOutDate: string;
@@ -99,6 +100,7 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      idempotencyKey: b.idempotencyKey,
       tipoHabitacionId: b.roomId,
       checkIn: b.checkInDate,
       checkOut: b.checkOutDate,
