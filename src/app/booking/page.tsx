@@ -78,6 +78,16 @@ interface AvailableRoom {
   image: string;
   description: string;
   rating: number;
+  capacity?: number;
+  capacityAdults: number;
+  capacityChildren: number;
+  adultsIncluded: number;
+  childrenIncluded: number;
+  infantAgeMax: number;
+  childAgeMax: number;
+  extraAdultRate: number;
+  extraChildRate: number;
+  extraInfantRate: number;
 }
 
 function BookingPageInner() {
@@ -111,6 +121,7 @@ function BookingPageInner() {
   const [notas, setNotas] = useState('');
   const [adultos, setAdultos] = useState(2);
   const [ninos, setNinos] = useState(0);
+  const [edadesNinos, setEdadesNinos] = useState<number[]>([]);
   const [captchaToken, setCaptchaToken] = useState<string>('');
   const [bookingRequestId, setBookingRequestId] = useState(() => crypto.randomUUID());
 
@@ -183,7 +194,10 @@ function BookingPageInner() {
   const handleBookRoom = (room: AvailableRoom) => {
     setSelectedRoom(room);
     setShowCheckoutForm(true);
-    setAdultos(guests);
+    setAdultos(Math.min(guests, room.capacityAdults));
+    const menores = Math.max(0, guests - room.capacityAdults);
+    setNinos(menores);
+    setEdadesNinos(Array.from({ length: menores }, () => Math.min(8, room.childAgeMax)));
     setBookingRequestId(crypto.randomUUID());
   };
 
@@ -199,6 +213,14 @@ function BookingPageInner() {
       setToast({ type: 'error', text: lang === 'es' ? 'Completa el captcha' : 'Complete the captcha' });
       return;
     }
+    if (adultos > selectedRoom.capacityAdults || ninos > selectedRoom.capacityChildren) {
+      setToast({ type: 'error', text: language === 'es' ? 'La ocupaciÃ³n excede la capacidad de esta habitaciÃ³n' : 'Occupancy exceeds this room capacity' });
+      return;
+    }
+    if (edadesNinos.length !== ninos || edadesNinos.some((edad) => edad < 0 || edad > selectedRoom.childAgeMax)) {
+      setToast({ type: 'error', text: language === 'es' ? `Registra una edad vÃ¡lida para cada niÃ±o (0 a ${selectedRoom.childAgeMax})` : `Enter a valid age for every child (0 to ${selectedRoom.childAgeMax})` });
+      return;
+    }
     try {
       setSubmitting(true);
       const result = await createGuestReservation({
@@ -211,6 +233,7 @@ function BookingPageInner() {
         guestPhone: huesped.telefono,
         adults: adultos,
         children: ninos,
+        childAges: edadesNinos,
         notes: notas,
         pais: huesped.pais,
         documentoTipo: huesped.documentoTipo,
@@ -222,6 +245,8 @@ function BookingPageInner() {
       setSelectedRoom(null);
       setHuesped(huespedVacio());
       setNotas('');
+      setNinos(0);
+      setEdadesNinos([]);
       setCaptchaToken('');
       setBookingRequestId(crypto.randomUUID());
     } catch (err: unknown) {
@@ -235,6 +260,17 @@ function BookingPageInner() {
   const nights = Math.ceil(
     (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
   );
+  const ocupacionCotizada = (() => {
+    if (!selectedRoom) return { recargoNoche: 0, total: 0 };
+    const adultosExtra = Math.max(0, adultos - selectedRoom.adultsIncluded);
+    const edadesCobrables = edadesNinos.slice(Math.min(selectedRoom.childrenIncluded, edadesNinos.length));
+    const infantesExtra = edadesCobrables.filter((edad) => edad <= selectedRoom.infantAgeMax).length;
+    const ninosExtra = edadesCobrables.length - infantesExtra;
+    const recargoNoche = adultosExtra * selectedRoom.extraAdultRate
+      + infantesExtra * selectedRoom.extraInfantRate
+      + ninosExtra * selectedRoom.extraChildRate;
+    return { recargoNoche, total: selectedRoom.totalPrice + recargoNoche * Math.max(1, nights) };
+  })();
 
   // Habitaciones siempre excluyen tipos legacy con "pasadia" en el nombre.
   // El listado de pasadías ahora viene de su propio endpoint (no de bookingPublic.disponibilidad).
@@ -260,7 +296,10 @@ function BookingPageInner() {
                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 mt-1 uppercase tracking-widest">
                    <Calendar className="w-3 h-3" /> {checkInDate} - {checkOutDate} ({nights} {t('booking.nights')})
                 </div>
-                <p className="text-2xl font-black text-primary mt-3">${selectedRoom.totalPrice}</p>
+                <p className="text-2xl font-black text-primary mt-3">${ocupacionCotizada.total.toFixed(2)}</p>
+                {ocupacionCotizada.recargoNoche > 0 && (
+                  <p className="text-[10px] font-bold text-zinc-500 mt-1">Incluye ${ocupacionCotizada.recargoNoche.toFixed(2)} por noche de huÃ©spedes adicionales</p>
+                )}
              </div>
              <div className="space-y-3">
                 <HuespedFormFields
@@ -268,6 +307,42 @@ function BookingPageInner() {
                   onChange={setHuesped}
                   language={language === 'en' ? 'en' : 'es'}
                 />
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">{language === 'es' ? 'Adultos' : 'Adults'}</span>
+                    <input type="number" min={1} max={selectedRoom.capacityAdults} value={adultos}
+                      onChange={(e) => setAdultos(Math.max(1, Math.min(selectedRoom.capacityAdults, Number(e.target.value) || 1)))}
+                      className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
+                    <span className="text-[9px] text-zinc-400">MÃ¡x. {selectedRoom.capacityAdults}</span>
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">{language === 'es' ? 'NiÃ±os' : 'Children'}</span>
+                    <input type="number" min={0} max={selectedRoom.capacityChildren} value={ninos}
+                      onChange={(e) => {
+                        const cantidad = Math.max(0, Math.min(selectedRoom.capacityChildren, Number(e.target.value) || 0));
+                        setNinos(cantidad);
+                        setEdadesNinos((actuales) => Array.from({ length: cantidad }, (_, i) => actuales[i] ?? Math.min(8, selectedRoom.childAgeMax)));
+                      }}
+                      className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
+                    <span className="text-[9px] text-zinc-400">MÃ¡x. {selectedRoom.capacityChildren}</span>
+                  </label>
+                </div>
+                {edadesNinos.length > 0 && (
+                  <div className="rounded-xl border border-zinc-200 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">{language === 'es' ? 'Edad de cada niÃ±o' : 'Age of each child'}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {edadesNinos.map((edad, index) => (
+                        <label key={index} className="text-xs font-bold text-zinc-500">
+                          {language === 'es' ? `NiÃ±o ${index + 1}` : `Child ${index + 1}`}
+                          <input type="number" min={0} max={selectedRoom.childAgeMax} value={edad}
+                            onChange={(e) => setEdadesNinos((actuales) => actuales.map((valor, i) => i === index ? Number(e.target.value) : valor))}
+                            className="mt-1 w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm outline-none focus:border-primary" />
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-zinc-400 mt-2">{language === 'es' ? `Hasta ${selectedRoom.childAgeMax} aÃ±os; mayores se registran como adultos.` : `Up to age ${selectedRoom.childAgeMax}; older guests count as adults.`}</p>
+                  </div>
+                )}
                 <label className="block">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
                     {language === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}

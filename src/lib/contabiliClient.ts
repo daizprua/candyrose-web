@@ -48,6 +48,10 @@ export interface TipoHabitacion {
   descripcion: string;
   tarifaBase: number;
   capacidad: number;
+  capacidadAdultos: number;
+  capacidadNinos: number;
+  edadInfanteHasta: number;
+  edadNinoHasta: number;
 }
 
 export interface DisponibilidadTipo {
@@ -59,6 +63,15 @@ export interface DisponibilidadTipo {
   totalNoche: number;
   noches: number;
   capacidad: number;
+  capacidadAdultos: number;
+  capacidadNinos: number;
+  adultosIncluidos: number;
+  ninosIncluidos: number;
+  edadInfanteHasta: number;
+  edadNinoHasta: number;
+  cargoAdultoExtra: number;
+  cargoNinoExtra: number;
+  cargoInfanteExtra: number;
   disponibles: number;
   totalHabitaciones: number;
 }
@@ -84,6 +97,7 @@ export interface ReservaInput extends HuespedInput {
   checkOut: string;
   adultos: number;
   ninos?: number;
+  edadesNinos?: number[];
   notas?: string;
   idioma?: "es" | "en" | "pt";
 }
@@ -117,6 +131,7 @@ export async function crearReserva(input: ReservaInput): Promise<{
   return trpcMutation("bookingPublic.crearReserva", {
     ...input,
     ninos: input.ninos ?? 0,
+    edadesNinos: input.edadesNinos ?? [],
     pais: input.pais ?? "PA",
     idioma: input.idioma ?? "es",
   });

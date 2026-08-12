@@ -21,6 +21,15 @@ export interface AvailableRoom {
   appliedRatePlan?: null;
   status: string;
   capacity?: number;
+  capacityAdults: number;
+  capacityChildren: number;
+  adultsIncluded: number;
+  childrenIncluded: number;
+  infantAgeMax: number;
+  childAgeMax: number;
+  extraAdultRate: number;
+  extraChildRate: number;
+  extraInfantRate: number;
   baseOccupancy?: number;
   bedType?: string | null;
   view?: string | null;
@@ -43,6 +52,7 @@ export interface BookingRequest {
   guestPhone: string;
   adults?: number;
   children?: number;
+  childAges?: number[];
   notes?: string;
   pais: string;
   documentoTipo: "cedula_pa" | "pasaporte" | "otro";
@@ -63,6 +73,15 @@ function mapDispToRoom(d: DisponibilidadTipo): AvailableRoom {
     nights: d.noches,
     status: "available",
     capacity: d.capacidad,
+    capacityAdults: d.capacidadAdultos,
+    capacityChildren: d.capacidadNinos,
+    adultsIncluded: d.adultosIncluidos,
+    childrenIncluded: d.ninosIncluidos,
+    infantAgeMax: d.edadInfanteHasta,
+    childAgeMax: d.edadNinoHasta,
+    extraAdultRate: d.cargoAdultoExtra,
+    extraChildRate: d.cargoNinoExtra,
+    extraInfantRate: d.cargoInfanteExtra,
     unitsAvailable: d.disponibles,
     amenities: [],
     image: DEFAULT_IMG,
@@ -106,6 +125,7 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
       checkOut: b.checkOutDate,
       adultos: b.adults ?? 2,
       ninos: b.children ?? 0,
+      edadesNinos: b.childAges ?? [],
       nombre: b.guestName,
       email: b.guestEmail,
       telefono: b.guestPhone,
