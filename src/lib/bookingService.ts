@@ -144,11 +144,32 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
 }
 
 export function validateBookingDates(checkInDate: string, checkOutDate: string) {
-  const checkIn = new Date(checkInDate);
-  const checkOut = new Date(checkOutDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (checkIn < today) return { valid: false, error: "Check-in date cannot be in the past" };
-  if (checkIn >= checkOut) return { valid: false, error: "Check-out date must be after check-in date" };
+  // Comparamos las fechas como texto "YYYY-MM-DD", NO como Date. `new Date("2026-09-17")`
+  // se parsea en UTC, y en Panama (UTC-5) eso cae el dia anterior a las 19:00, asi que
+  // una llegada para HOY se rechazaba como "en el pasado" y el huesped no podia reservar.
+  const hoy = hoyPanama();
+  if (checkInDate < hoy) return { valid: false, error: "Check-in date cannot be in the past" };
+  if (checkInDate >= checkOutDate) return { valid: false, error: "Check-out date must be after check-in date" };
   return { valid: true, error: undefined };
+}
+
+/** Fecha de hoy "YYYY-MM-DD" en la zona horaria del hotel (America/Panama). */
+export function hoyPanama(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Panama",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/**
+ * Suma dias a una fecha "YYYY-MM-DD" trabajando en UTC puro y devolviendo texto.
+ * Se usa UTC a proposito: la fecha entra y sale como texto, nunca se muestra como
+ * hora local, asi que no hay corrimiento de dia por zona horaria.
+ */
+export function sumarDias(fecha: string, dias: number): string {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const base = Date.UTC(y, m - 1, d);
+  return new Date(base + dias * 86400000).toISOString().slice(0, 10);
 }

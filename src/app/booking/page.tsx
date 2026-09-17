@@ -7,7 +7,7 @@ import {
   Clock, LogIn, LogOut, CreditCard, Ship, Dumbbell,
   ShieldCheck, XCircle, Utensils, Waves,
 } from '@/lib/icons';
-import { getAvailableRooms, createGuestReservation, validateBookingDates } from '@/lib/bookingService';
+import { getAvailableRooms, createGuestReservation, validateBookingDates, hoyPanama, sumarDias } from '@/lib/bookingService';
 import type { PasadiaProducto, PasadiaReservaInput, HuespedInput } from '@/lib/contabiliClient';
 import { HuespedFormFields, huespedVacio, validarHuesped, type HuespedData } from '@/components/HuespedFormFields';
 import { TurnstileWidget } from '@/components/TurnstileWidget';
@@ -104,10 +104,10 @@ function BookingPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkInDate, setCheckInDate] = useState(
-    ISO_RE.test(qsCheckIn ?? '') ? qsCheckIn! : new Date().toISOString().split('T')[0],
+    ISO_RE.test(qsCheckIn ?? '') ? qsCheckIn! : hoyPanama(),
   );
   const [checkOutDate, setCheckOutDate] = useState(
-    ISO_RE.test(qsCheckOut ?? '') ? qsCheckOut! : new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    ISO_RE.test(qsCheckOut ?? '') ? qsCheckOut! : sumarDias(hoyPanama(), 1),
   );
   const [guests, setGuests] = useState(
     Number.isFinite(qsGuests) && qsGuests >= 1 && qsGuests <= 12 ? qsGuests : 2,
@@ -396,15 +396,13 @@ function BookingPageInner() {
                <input
                   type="date"
                   value={checkInDate}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={hoyPanama()}
                   onChange={e => {
                     const v = e.target.value;
                     setCheckInDate(v);
                     // Si la salida queda igual o anterior a la entrada, auto-ajustar a +1 día.
-                    if (v && checkOutDate && new Date(checkOutDate).getTime() <= new Date(v).getTime()) {
-                      const next = new Date(v);
-                      next.setDate(next.getDate() + 1);
-                      setCheckOutDate(next.toISOString().split('T')[0]);
+                    if (v && checkOutDate && checkOutDate <= v) {
+                      setCheckOutDate(sumarDias(v, 1));
                     }
                   }}
                   className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors"
@@ -415,11 +413,7 @@ function BookingPageInner() {
                <input
                   type="date"
                   value={checkOutDate}
-                  min={(() => {
-                    const d = new Date(checkInDate || new Date().toISOString().split('T')[0]);
-                    d.setDate(d.getDate() + 1);
-                    return d.toISOString().split('T')[0];
-                  })()}
+                  min={sumarDias(checkInDate || hoyPanama(), 1)}
                   onChange={e => setCheckOutDate(e.target.value)}
                   className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors"
                />
@@ -747,7 +741,7 @@ function PasadiasPanel({
   const lang: 'es' | 'en' = language === 'en' ? 'en' : 'es';
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [reservaOpen, setReservaOpen] = useState(false);
-  const [fecha, setFecha] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(sumarDias(hoyPanama(), 1));
   const [huesped, setHuesped] = useState<HuespedData>(huespedVacio());
   const [notas, setNotas] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
@@ -917,7 +911,7 @@ function PasadiasPanel({
                 <input
                   type="date"
                   value={fecha}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={hoyPanama()}
                   onChange={(e) => setFecha(e.target.value)}
                   className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm font-bold outline-none focus:border-primary"
                 />
