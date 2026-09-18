@@ -33,6 +33,24 @@ const PAISES: Array<{ code: string; nombre: string }> = [
   { code: "OT", nombre: "Otro" },
 ];
 
+// Prefijo telefónico por país. El huésped elige el suyo en vez de escribirlo:
+// antes el formulario sólo sugería el formato panameño con un placeholder y un
+// número extranjero llegaba sin código de país, así que el WhatsApp de
+// confirmación no le llegaba nunca.
+const PREFIJOS: Record<string, string> = {
+  PA: "507", US: "1", CA: "1", MX: "52", CO: "57", CR: "506", ES: "34",
+  AR: "54", BR: "55", CL: "56", PE: "51", EC: "593", VE: "58", DO: "1",
+  GT: "502", SV: "503", HN: "504", NI: "505", FR: "33", DE: "49",
+  IT: "39", GB: "44",
+};
+
+// Lista para el desplegable: ordenada con Panamá primero por ser el caso más
+// común, y el resto alfabético.
+const OPCIONES_PREFIJO = PAISES
+  .filter((p) => PREFIJOS[p.code])
+  .map((p) => ({ code: p.code, nombre: p.nombre, prefijo: PREFIJOS[p.code] }))
+  .sort((a, b) => (a.code === "PA" ? -1 : b.code === "PA" ? 1 : a.nombre.localeCompare(b.nombre)));
+
 export interface HuespedData {
   nombre: string;
   email: string;
@@ -52,6 +70,15 @@ export function HuespedFormFields({
   language: 'es' | 'en';
 }) {
   const set = <K extends keyof HuespedData>(k: K, v: HuespedData[K]) => onChange({ ...value, [k]: v });
+
+  // El teléfono se guarda completo ("+507 60000000") pero se edita en dos
+  // partes. Se derivan del valor para no duplicar estado.
+  const m = /^\+(\d{1,4})\s*(.*)$/.exec(value.telefono ?? '');
+  const prefijo = m?.[1] ?? PREFIJOS[value.pais] ?? '507';
+  const numeroLocal = m?.[2] ?? (value.telefono ?? '');
+  const componer = (pre: string, num: string) => `+${pre} ${num}`.trim();
+  const setPrefijo = (pre: string) => set('telefono', componer(pre, numeroLocal));
+  const setNumeroLocal = (num: string) => set('telefono', componer(prefijo, num));
 
   const labelClass = "text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1";
   const inputClass = "w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary";
@@ -82,17 +109,35 @@ export function HuespedFormFields({
         />
       </label>
 
-      <label className="block">
-        <span className={labelClass}>{language === 'es' ? 'Teléfono' : 'Phone'}</span>
-        <input
-          type="tel"
-          required
-          value={value.telefono}
-          onChange={(e) => set('telefono', e.target.value)}
-          placeholder="+507 6000-0000"
-          className={inputClass}
-        />
-      </label>
+      <div className="block">
+        <span className={labelClass}>{language === 'es' ? 'Teléfono (WhatsApp)' : 'Phone (WhatsApp)'}</span>
+        <div className="flex gap-2">
+          <select
+            aria-label={language === 'es' ? 'Código de país' : 'Country code'}
+            value={prefijo}
+            onChange={(e) => setPrefijo(e.target.value)}
+            className={`${inputClass} w-32 shrink-0`}
+          >
+            {OPCIONES_PREFIJO.map((o) => (
+              <option key={o.code} value={o.prefijo}>+{o.prefijo} {o.code}</option>
+            ))}
+          </select>
+          <input
+            type="tel"
+            required
+            aria-label={language === 'es' ? 'Número de teléfono' : 'Phone number'}
+            value={numeroLocal}
+            onChange={(e) => setNumeroLocal(e.target.value.replace(/[^\d\s-]/g, ''))}
+            placeholder={prefijo === '507' ? '6000-0000' : (language === 'es' ? 'Número sin el código' : 'Number without country code')}
+            className={inputClass}
+          />
+        </div>
+        <p className="mt-1 text-[10px] text-zinc-500">
+          {language === 'es'
+            ? 'Elige tu país y escribe el número sin el código. Te enviaremos la confirmación por WhatsApp.'
+            : 'Pick your country and enter the number without the country code. We will send your confirmation via WhatsApp.'}
+        </p>
+      </div>
 
       <label className="block">
         <span className={labelClass}>{language === 'es' ? 'País' : 'Country'}</span>
