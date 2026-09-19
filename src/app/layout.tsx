@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   description: "Boutique Hotel in Panama",
 };
 
+// Sin esto el navegador adivina la codificación y los acentos y la ñ salen como
+// "NiÃ±os" en algunos equipos.
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       suppressHydrationWarning
       className="h-full antialiased"
     >

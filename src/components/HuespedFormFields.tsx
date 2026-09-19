@@ -78,6 +78,12 @@ export function HuespedFormFields({
   const numeroLocal = m?.[2] ?? (value.telefono ?? '');
   const componer = (pre: string, num: string) => `+${pre} ${num}`.trim();
   const setPrefijo = (pre: string) => set('telefono', componer(pre, numeroLocal));
+  // El país seleccionado se deduce del prefijo actual; si varios lo comparten,
+  // manda el país del formulario.
+  const paisPrefijo = PREFIJOS[value.pais] === prefijo
+    ? value.pais
+    : (OPCIONES_PREFIJO.find((o) => o.prefijo === prefijo)?.code ?? value.pais);
+  const setPaisPrefijo = (code: string) => setPrefijo(PREFIJOS[code] ?? '507');
   const setNumeroLocal = (num: string) => set('telefono', componer(prefijo, num));
 
   const labelClass = "text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1";
@@ -112,14 +118,17 @@ export function HuespedFormFields({
       <div className="block">
         <span className={labelClass}>{language === 'es' ? 'Teléfono (WhatsApp)' : 'Phone (WhatsApp)'}</span>
         <div className="flex gap-2">
+          {/* El valor es el código de país, no el prefijo: varios países comparten
+              prefijo (+1 US/CA/DO) y el select marcaba el primero de la lista en
+              vez del país elegido. */}
           <select
             aria-label={language === 'es' ? 'Código de país' : 'Country code'}
-            value={prefijo}
-            onChange={(e) => setPrefijo(e.target.value)}
-            className={`${inputClass} w-32 shrink-0`}
+            value={paisPrefijo}
+            onChange={(e) => setPaisPrefijo(e.target.value)}
+            className={`${inputClass} w-24 shrink-0 px-2`}
           >
             {OPCIONES_PREFIJO.map((o) => (
-              <option key={o.code} value={o.prefijo}>+{o.prefijo} {o.code}</option>
+              <option key={o.code} value={o.code}>+{o.prefijo}</option>
             ))}
           </select>
           <input
