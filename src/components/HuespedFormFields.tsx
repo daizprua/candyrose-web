@@ -125,7 +125,7 @@ export function HuespedFormFields({
             aria-label={language === 'es' ? 'Código de país' : 'Country code'}
             value={paisPrefijo}
             onChange={(e) => setPaisPrefijo(e.target.value)}
-            className={`${inputClass} w-24 shrink-0 px-2`}
+            className={`${inputClass.replace("w-full", "")} w-[92px] shrink-0 px-2`}
           >
             {OPCIONES_PREFIJO.map((o) => (
               <option key={o.code} value={o.code}>+{o.prefijo}</option>
@@ -137,8 +137,9 @@ export function HuespedFormFields({
             aria-label={language === 'es' ? 'Número de teléfono' : 'Phone number'}
             value={numeroLocal}
             onChange={(e) => setNumeroLocal(e.target.value.replace(/[^\d\s-]/g, ''))}
+            inputMode="tel"
             placeholder={prefijo === '507' ? '6000-0000' : (language === 'es' ? 'Número sin el código' : 'Number without country code')}
-            className={inputClass}
+            className={`${inputClass} flex-1 min-w-0`}
           />
         </div>
         <p className="mt-1 text-[10px] text-zinc-500">
