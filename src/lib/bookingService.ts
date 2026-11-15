@@ -16,6 +16,7 @@ export interface AvailableRoom {
   type: string;
   pricePerNight: number;
   totalPrice: number;
+  taxRate: number;
   nights: number;
   baseRate?: number;
   appliedRatePlan?: null;
@@ -70,6 +71,7 @@ function mapDispToRoom(d: DisponibilidadTipo): AvailableRoom {
     type: d.codigo,
     pricePerNight: d.tarifaNoche,
     totalPrice: d.totalNoche,
+    taxRate: d.tasaImpuesto ?? 0.10,
     nights: d.noches,
     status: "available",
     capacity: d.capacidad,

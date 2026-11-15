@@ -74,6 +74,8 @@ export interface DisponibilidadTipo {
   cargoInfanteExtra: number;
   disponibles: number;
   totalHabitaciones: number;
+  /** Tasa de ITBMS de hospedaje (0.10 = 10%). Se cobra encima de la tarifa. */
+  tasaImpuesto?: number;
 }
 
 export type TipoDocumento = "cedula_pa" | "pasaporte" | "otro";
@@ -147,6 +149,8 @@ export interface PasadiaProducto {
   descripcion: string;
   tipoHuesped: "adulto" | "nino" | string;
   precio: number;
+  /** Tasa de ITBMS (0.07 = 7%). Ausente en versiones viejas del API: se asume 7%. */
+  tasaItbms?: number;
   incluyeAlmuerzo: boolean;
   incluyeDesayuno: boolean;
   incluyeBebidas: boolean;
