@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Calendar, User, Search, ChevronRight, Zap, Coffee, Wind, Wifi, Star, X, CheckCircle2, Minus, Plus } from 'lucide-react';
 import {
@@ -11,6 +11,14 @@ import { getAvailableRooms, createGuestReservation, validateBookingDates, hoyPan
 import type { PasadiaProducto, PasadiaReservaInput, HuespedInput } from '@/lib/contabiliClient';
 import { HuespedFormFields, huespedVacio, validarHuesped, type HuespedData } from '@/components/HuespedFormFields';
 import { TurnstileWidget } from '@/components/TurnstileWidget';
+import { SiteNav } from '@/components/SiteNav';
+import { SiteFooter } from '@/components/SiteFooter';
+
+// La API devuelve el error de Cloudflare (p. ej. "timeout-or-duplicate") cuando
+// el token del captcha ya se usó o caducó: hay que reiniciar el widget.
+function esErrorCaptcha(msg: string): boolean {
+  return /captcha|turnstile|timeout-or-duplicate/i.test(msg);
+}
 
 // Wrappers que pasan por los route handlers locales (/api/booking/*) en vez
 // de hablar directo con Contabili. El token vive solo en el servidor.
@@ -125,6 +133,7 @@ function BookingPageInner() {
   const [ninos, setNinos] = useState(0);
   const [edadesNinos, setEdadesNinos] = useState<number[]>([]);
   const [captchaToken, setCaptchaToken] = useState<string>('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [bookingRequestId, setBookingRequestId] = useState(() => crypto.randomUUID());
 
   const [submitting, setSubmitting] = useState(false);
@@ -172,30 +181,33 @@ function BookingPageInner() {
   // Pre-validación de fechas + consulta de disponibilidad. Separamos los dos
   // errores: si las fechas son inválidas, mensaje "Revisa las fechas"; si la
   // API falla, mensaje genérico de error (no confundir al huésped).
-  useEffect(() => {
+  // La misma consulta la usa la búsqueda inicial (efecto) y el botón
+  // "Actualizar búsqueda".
+  const buscarDisponibilidad = useCallback(async () => {
     if (!checkInDate || !checkOutDate) return;
-    const fetchData = async () => {
-      setLoading(true);
-      setError('');
-      const validation = validateBookingDates(checkInDate, checkOutDate);
-      if (!validation.valid) {
-        setError(validation.error ?? '');
-        setRooms([]);
-        setLoading(false);
-        return;
-      }
-      try {
-        const availableRooms = await getAvailableRooms(checkInDate, checkOutDate, guests);
-        setRooms(availableRooms);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Error consultando disponibilidad');
-        setRooms([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    setLoading(true);
+    setError('');
+    const validation = validateBookingDates(checkInDate, checkOutDate);
+    if (!validation.valid) {
+      setError(validation.error ?? '');
+      setRooms([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      const availableRooms = await getAvailableRooms(checkInDate, checkOutDate, guests);
+      setRooms(availableRooms);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error consultando disponibilidad');
+      setRooms([]);
+    } finally {
+      setLoading(false);
+    }
   }, [checkInDate, checkOutDate, guests]);
+
+  useEffect(() => {
+    buscarDisponibilidad();
+  }, [buscarDisponibilidad]);
 
   const handleBookRoom = (room: AvailableRoom) => {
     setSelectedRoom(room);
@@ -263,6 +275,10 @@ function BookingPageInner() {
       setBookingRequestId(crypto.randomUUID());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error';
+      if (esErrorCaptcha(msg)) {
+        setCaptchaToken('');
+        setCaptchaReset((n) => n + 1);
+      }
       setToast({ type: 'error', text: `${t('common.error')}: ${msg}` });
     } finally {
       setSubmitting(false);
@@ -301,6 +317,8 @@ function BookingPageInner() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-dark font-sans">
+      <SiteNav logo={LANDING_CONTENT.logo} />
+
       {/* Checkout Form Modal */}
       {showCheckoutForm && selectedRoom && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300 overflow-y-auto">
@@ -376,7 +394,7 @@ function BookingPageInner() {
                     className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary"
                   />
                 </label>
-                <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+                <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} resetSignal={captchaReset} />
                 <button
                   onClick={handleSubmitBooking}
                   disabled={submitting}
@@ -445,7 +463,7 @@ function BookingPageInner() {
                <input type="number" min="1" value={guests} onChange={e => setGuests(parseInt(e.target.value))} className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors" />
             </div>
             <div className="p-2">
-               <button className="w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-3xl shadow-lg transition-all uppercase tracking-widest text-[10px]">
+               <button type="button" onClick={() => buscarDisponibilidad()} disabled={loading} className="w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-3xl shadow-lg transition-all uppercase tracking-widest text-[10px]">
                   {language === 'es' ? 'Actualizar Búsqueda' : 'Update Search'}
                </button>
             </div>
@@ -639,6 +657,8 @@ function BookingPageInner() {
          )}
       </main>
 
+      <SiteFooter content={LANDING_CONTENT} />
+
       {confirmacion && (
         <ConfirmacionModal datos={confirmacion} language={language} onClose={() => setConfirmacion(null)} />
       )}
@@ -807,6 +827,7 @@ function PasadiasPanel({
   const [huesped, setHuesped] = useState<HuespedData>(huespedVacio());
   const [notas, setNotas] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   const items = productos
@@ -869,7 +890,12 @@ function PasadiasPanel({
       setNotas('');
       setCaptchaToken('');
     } catch (err: unknown) {
-      onToast({ type: 'error', text: err instanceof Error ? err.message : 'Error' });
+      const msg = err instanceof Error ? err.message : 'Error';
+      if (esErrorCaptcha(msg)) {
+        setCaptchaToken('');
+        setCaptchaReset((n) => n + 1);
+      }
+      onToast({ type: 'error', text: msg });
     } finally {
       setSubmitting(false);
     }
@@ -1027,7 +1053,7 @@ function PasadiasPanel({
                 </div>
               </div>
 
-              <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+              <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} resetSignal={captchaReset} />
 
               <button
                 onClick={confirmar}

@@ -32,21 +32,50 @@ declare global {
 }
 
 const SCRIPT_ID = "cf-turnstile-script";
+// Reintentos automáticos seguidos tras un error del widget. Evita un bucle
+// infinito si el error es de configuración (dominio no autorizado, etc.).
+const MAX_AUTO_RESETS = 3;
 
-export function TurnstileWidget({ onVerify, onExpire }: {
+/**
+ * resetSignal: el padre lo incrementa cuando la API rechaza el captcha
+ * (p. ej. timeout-or-duplicate). El widget se reinicia y avisa con onExpire
+ * para que el padre limpie el token guardado.
+ */
+export function TurnstileWidget({ onVerify, onExpire, resetSignal = 0 }: {
   onVerify: (token: string) => void;
   onExpire?: () => void;
+  resetSignal?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onVerifyRef = useRef(onVerify);
   const onExpireRef = useRef(onExpire);
+  const autoResetsRef = useRef(0);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   // Mantener refs actualizadas sin disparar el efecto principal
   useEffect(() => { onVerifyRef.current = onVerify; }, [onVerify]);
   useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
+
+  // Reinicia el widget para que el cliente pueda volver a marcarlo sin
+  // recargar la página, y limpia el token que tuviera guardado el padre.
+  // Solo usa refs, así que la función es estable entre renders.
+  const resetWidgetRef = useRef(() => {
+    onExpireRef.current?.();
+    if (widgetIdRef.current && window.turnstile) {
+      try { window.turnstile.reset(widgetIdRef.current); } catch { /* ignore */ }
+    }
+  });
+
+  // Reinicio pedido por el padre (la API rechazó el captcha).
+  useEffect(() => {
+    if (resetSignal === 0) return;
+    autoResetsRef.current = 0;
+    setErrorCode(null);
+    resetWidgetRef.current();
+  }, [resetSignal]);
 
   useEffect(() => {
     if (!siteKey) {
@@ -64,12 +93,22 @@ export function TurnstileWidget({ onVerify, onExpire }: {
           sitekey: siteKey,
           callback: (token: string) => {
             setErrorCode(null);
+            autoResetsRef.current = 0;
             onVerifyRef.current(token);
           },
-          'expired-callback': () => onExpireRef.current?.(),
+          // Token caducado o reto sin completar a tiempo: reiniciar el widget.
+          'expired-callback': () => resetWidgetRef.current(),
+          'timeout-callback': () => resetWidgetRef.current(),
           'error-callback': (code: string) => {
             setErrorCode(code || 'unknown');
             onExpireRef.current?.();
+            if (autoResetsRef.current < MAX_AUTO_RESETS) {
+              autoResetsRef.current += 1;
+              if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+              resetTimerRef.current = setTimeout(() => resetWidgetRef.current(), 1500);
+            }
+            // true = error manejado aquí; Turnstile no lo relanza en consola.
+            return true;
           },
           theme: 'light',
         });
@@ -95,6 +134,7 @@ export function TurnstileWidget({ onVerify, onExpire }: {
     }
 
     return () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       if (widgetIdRef.current && window.turnstile) {
         try { window.turnstile.remove(widgetIdRef.current); } catch { /* ignore */ }
         widgetIdRef.current = null;

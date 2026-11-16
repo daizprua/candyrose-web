@@ -23,6 +23,7 @@ const translations: Record<Language, Record<string, any>> = {
 };
 
 const DEFAULT_LANGUAGE: Language = 'es';
+const STORAGE_KEY = 'hotelcandyrose_language';
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
@@ -31,16 +32,26 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // Load language preference from localStorage on client side
   useEffect(() => {
     setIsClient(true);
-    const savedLanguage = localStorage.getItem('hotelcandyrose_language') as Language | null;
-    if (savedLanguage && ['es', 'en', 'pt'].includes(savedLanguage)) {
-      setLanguageState(savedLanguage);
+    // Se lee al montar (no en el render inicial) para que el HTML del servidor
+    // y el primer render del cliente coincidan y no haya hydration mismatch.
+    try {
+      const savedLanguage = localStorage.getItem(STORAGE_KEY) as Language | null;
+      if (savedLanguage && ['es', 'en', 'pt'].includes(savedLanguage)) {
+        setLanguageState(savedLanguage);
+      }
+    } catch {
+      // Almacenamiento bloqueado (modo privado, cookies desactivadas): se queda en español.
     }
   }, []);
 
   const setLanguage = (lang: Language) => {
     if (['es', 'en', 'pt'].includes(lang)) {
       setLanguageState(lang);
-      localStorage.setItem('hotelcandyrose_language', lang);
+      try {
+        localStorage.setItem(STORAGE_KEY, lang);
+      } catch {
+        // Sin almacenamiento disponible: el idioma vale solo para esta página.
+      }
     }
   };
 

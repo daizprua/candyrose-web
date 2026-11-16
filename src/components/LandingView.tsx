@@ -11,6 +11,9 @@ import {
   ShieldCheck, PawPrint, XCircle, Anchor, Building2, Mail
 } from '@/lib/icons';
 import { hoyPanama, sumarDias } from '@/lib/bookingService';
+import { useTranslation } from '@/i18n/useTranslation';
+import { SiteNav } from './SiteNav';
+import { SiteFooter } from './SiteFooter';
 
 interface RoomEditorial {
   code: string;
@@ -95,8 +98,10 @@ interface CMSContent {
 }
 
 export default function LandingView({ initialContent, rooms }: { initialContent: CMSContent, rooms: any[] }) {
-  const [lang, setLang] = useState<'es' | 'en'>('es');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Idioma compartido (contexto i18n, persistido en localStorage) para que
+  // la elección se mantenga entre portada, /booking y páginas legales.
+  const { language } = useTranslation();
+  const lang: 'es' | 'en' = language === 'en' ? 'en' : 'es';
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -119,7 +124,6 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
       checkIn: "Entrada",
       checkOut: "Salida",
       rooms: "Habitaciones",
-      services: "Experiencias",
       aboutUs: "Nosotros",
       contact: "Contacto",
       viewAllRooms: "Ver todas las habitaciones",
@@ -140,7 +144,6 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
       checkIn: "Check-in",
       checkOut: "Check-out",
       rooms: "Rooms",
-      services: "Experiences",
       aboutUs: "About Us",
       contact: "Contact",
       viewAllRooms: "View all rooms",
@@ -157,44 +160,7 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
 
   return (
     <div className="min-h-screen bg-[#FCFBF7] text-dark overflow-x-hidden font-sans selection:bg-primary/30">
-      {/* Navigation — sticky pill aligned to the right edge.
-          Single compact group: menu links + language toggle + CTA, all
-          inside one floating white pill that stays visible while scrolling.
-          Once the user scrolls past the hero we deepen the shadow so the
-          pill keeps standing out over content sections. */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-5 flex justify-end transition-all duration-300 ${
-        scrolled ? 'py-3' : 'py-5'
-      }`}>
-        <div className={`bg-white/85 backdrop-blur-xl rounded-full border border-white/60 pl-6 pr-2 py-2 flex items-center gap-6 transition-shadow duration-300 ${
-          scrolled ? 'shadow-2xl shadow-dark/15' : 'shadow-xl shadow-dark/5'
-        }`}>
-          <div className="hidden lg:flex items-center gap-6 text-[11px] font-black uppercase tracking-[0.18em] text-dark">
-            <Link href="#rooms" className="hover:text-primary transition-colors">{t.rooms}</Link>
-            <Link href="#services" className="hover:text-primary transition-colors">{t.services}</Link>
-            <Link href="#about" className="hover:text-primary transition-colors">{t.aboutUs}</Link>
-            <Link href="#contact" className="hover:text-primary transition-colors">{t.contact}</Link>
-          </div>
-
-          <button
-            onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
-            className="hidden md:flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-full border border-zinc-200 transition-all text-[11px] font-black tracking-widest"
-            aria-label="Cambiar idioma"
-          >
-            <Globe className="w-3.5 h-3.5" /> {lang.toUpperCase()}
-          </button>
-
-          <Link
-            href="/booking"
-            className="bg-primary text-white px-5 md:px-6 py-2.5 rounded-full hover:bg-primary/90 transition-all shadow-lg shadow-primary/30 text-[11px] font-black tracking-widest uppercase whitespace-nowrap"
-          >
-            {t.bookNow}
-          </Link>
-
-          <button className="lg:hidden p-2 text-dark" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label={lang === 'es' ? 'Menú' : 'Menu'}>
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-      </nav>
+      <SiteNav logo={initialContent.logo} />
 
       {/* Hero Section
           Tamaño contenido (min-h pero no h-screen) para que entre a 100% de zoom
@@ -427,145 +393,7 @@ export default function LandingView({ initialContent, rooms }: { initialContent:
           </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative bg-dark text-white pt-20 lg:pt-24 pb-10 px-6 overflow-hidden">
-          {/* Soft brand glows so the dark surface doesn't feel flat */}
-          <div className="absolute -top-32 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute -bottom-32 -right-20 w-96 h-96 bg-secondary/15 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="container mx-auto relative">
-              {/* Main footer grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 mb-16">
-                  {/* Brand */}
-                  <div className="lg:col-span-4 space-y-5">
-                      <div
-                          className="bg-white rounded-3xl shadow-xl shadow-black/30 flex items-center justify-center overflow-hidden p-3"
-                          style={{ width: 120, height: 120 }}
-                      >
-                          {initialContent.logo ? (
-                              <img
-                                  src={initialContent.logo}
-                                  width={120}
-                                  height={120}
-                                  alt="Hotel Candy Rose"
-                                  className="max-w-full max-h-full object-contain"
-                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                              />
-                          ) : (
-                              <Building2 className="w-10 h-10 text-primary" />
-                          )}
-                      </div>
-                      <p className="text-white/60 font-medium leading-relaxed text-sm max-w-xs">
-                          {lang === 'es'
-                              ? 'Un santuario boutique diseñado para crear recuerdos que duren toda una vida. Belleza, paz y hospitalidad caribeña.'
-                              : 'A boutique sanctuary built to create memories that last a lifetime. Beauty, peace and Caribbean hospitality.'}
-                      </p>
-                  </div>
-
-                  {/* Explorar */}
-                  <div className="lg:col-span-2 space-y-5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary block">
-                          {lang === 'es' ? 'Explorar' : 'Explore'}
-                      </span>
-                      <ul className="space-y-3 text-sm font-bold text-white/70">
-                          <li><Link href="#rooms" className="hover:text-white transition-colors">{t.rooms}</Link></li>
-                          <li><Link href="#services" className="hover:text-white transition-colors">{t.services}</Link></li>
-                          <li><Link href="#about" className="hover:text-white transition-colors">{t.aboutUs}</Link></li>
-                          <li><Link href="#contact" className="hover:text-white transition-colors">{t.contact}</Link></li>
-                          <li><Link href="/booking" className="text-primary hover:text-white transition-colors">{t.bookNow}</Link></li>
-                      </ul>
-                  </div>
-
-                  {/* Contacto */}
-                  <div className="lg:col-span-3 space-y-5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary block">
-                          {lang === 'es' ? 'Contacto' : 'Contact'}
-                      </span>
-                      <ul className="space-y-3 text-sm font-medium text-white/70">
-                          {initialContent.contactPhone && (
-                              <li className="flex items-start gap-2">
-                                  <Phone className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                                  <a href={`tel:${initialContent.contactPhone}`} className="hover:text-white transition-colors">{initialContent.contactPhone}</a>
-                              </li>
-                          )}
-                          {initialContent.contactEmail && (
-                              <li className="flex items-start gap-2">
-                                  <Mail className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                                  <a href={`mailto:${initialContent.contactEmail}`} className="hover:text-white transition-colors break-all">{initialContent.contactEmail}</a>
-                              </li>
-                          )}
-                          {initialContent.contactLocation && (
-                              <li className="flex items-start gap-2">
-                                  <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                                  <span>{initialContent.contactLocation}</span>
-                              </li>
-                          )}
-                          {initialContent.contactInsta && (
-                              <li className="flex items-start gap-2">
-                                  <Instagram className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                                  <a href={`https://instagram.com/${initialContent.contactInsta.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">@{initialContent.contactInsta.replace('@', '')}</a>
-                              </li>
-                          )}
-                      </ul>
-                  </div>
-
-                  {/* Legales */}
-                  <div className="lg:col-span-3 space-y-5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary block">
-                          {lang === 'es' ? 'Legales' : 'Legal'}
-                      </span>
-                      <ul className="space-y-3 text-sm font-bold text-white/70">
-                          <li className="hover:text-white transition-colors cursor-pointer">{lang === 'es' ? 'Política de privacidad' : 'Privacy policy'}</li>
-                          <li className="hover:text-white transition-colors cursor-pointer">{lang === 'es' ? 'Términos y condiciones' : 'Terms & conditions'}</li>
-                          <li className="hover:text-white transition-colors cursor-pointer">{lang === 'es' ? 'Política de cookies' : 'Cookie policy'}</li>
-                          <li className="hover:text-white transition-colors cursor-pointer">{lang === 'es' ? 'Política de cancelación' : 'Cancellation policy'}</li>
-                      </ul>
-                  </div>
-              </div>
-
-              {/* Bottom bar */}
-              <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em]">
-                  <p className="text-white/50 flex items-center gap-2 flex-wrap justify-center">
-                      <span>© 2026 Hotel Candy Rose</span>
-                      <span className="opacity-50">·</span>
-                      <span>{lang === 'es' ? 'Desde 1972' : 'Since 1972'}</span>
-                  </p>
-                  <p className="text-white/40">
-                      Crafted by <a href="https://devstack.agency" target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary transition-colors">Darinel Aizp · devstack.agency</a>
-                  </p>
-              </div>
-          </div>
-      </footer>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-white p-10 flex flex-col justify-between animate-in fade-in zoom-in duration-300">
-            <div className="flex justify-between items-center">
-                {initialContent.logo ? (
-                  <img src={initialContent.logo} alt="Hotel Candy Rose" className="h-14 w-14 object-contain" />
-                ) : (
-                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                )}
-                <button onClick={() => setIsMenuOpen(false)} aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'}><X className="w-8 h-8" /></button>
-            </div>
-            <ul className="space-y-8 text-4xl font-black tracking-tighter">
-                <li><Link href="#rooms" onClick={() => setIsMenuOpen(false)}>{t.rooms}</Link></li>
-                <li><Link href="#services" onClick={() => setIsMenuOpen(false)}>{t.services}</Link></li>
-                <li><Link href="#about" onClick={() => setIsMenuOpen(false)}>{t.aboutUs}</Link></li>
-                <li><Link href="/booking" className="text-primary">{t.bookNow}</Link></li>
-            </ul>
-            <div className="flex justify-between items-center pt-8 border-t border-zinc-100">
-                <button onClick={() => setLang(lang === 'es' ? 'en' : 'es')} className="font-black uppercase tracking-widest text-xs flex items-center gap-2">
-                    <Globe className="w-4 h-4" /> {lang === 'es' ? 'English' : 'Español'}
-                </button>
-                <div className="flex gap-4">
-                    <Camera className="w-5 h-5" />
-                </div>
-            </div>
-        </div>
-      )}
+      <SiteFooter content={initialContent} />
     </div>
   );
 }
