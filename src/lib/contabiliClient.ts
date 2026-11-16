@@ -197,6 +197,13 @@ export interface PasadiaProducto {
   imagenUrl: string | null;
 }
 
+export interface TextoLegal { titulo: string; contenido: string; actualizadoAt: string | null }
+
+/** Términos o privacidad editados por gerencia en el sistema (Configuración › Textos legales). */
+export async function obtenerTextoLegal(clave: "terminos" | "privacidad"): Promise<TextoLegal | null> {
+  return trpcQuery("bookingPublic.textoLegal", { clave });
+}
+
 export async function listarPasadias(ctx?: ContextoCliente): Promise<PasadiaProducto[]> {
   return trpcQuery("bookingPublic.pasadiasCatalogo", {}, ctx);
 }

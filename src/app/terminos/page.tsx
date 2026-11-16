@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { LegalPage } from '@/components/LegalPage';
+import { obtenerTextoLegal } from '@/lib/contabiliClient';
+import { markdownAHtml } from '@/lib/markdown-simple';
 import { SITE_URL, withBase } from '@/lib/base-path';
 
 export const metadata: Metadata = {
@@ -10,7 +12,28 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function TerminosPage() {
+// Texto vigente desde el sistema (lo edita gerencia); si el sistema no
+// responde, se muestra la versión original incluida en la web.
+export const revalidate = 300;
+
+function fechaLarga(iso: string | null): string {
+  if (!iso) return '16 de noviembre de 2026';
+  return new Date(iso).toLocaleDateString('es-PA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Panama' });
+}
+
+export default async function TerminosPage() {
+  const texto = await obtenerTextoLegal('terminos').catch(() => null);
+  if (texto?.contenido) {
+    return (
+      <LegalPage titulo={texto.titulo} actualizado={fechaLarga(texto.actualizadoAt)}>
+        <div dangerouslySetInnerHTML={{ __html: markdownAHtml(texto.contenido) }} />
+      </LegalPage>
+    );
+  }
+  return <ContenidoOriginal />;
+}
+
+function ContenidoOriginal() {
   return (
     <LegalPage titulo="Términos y condiciones de reserva" actualizado="16 de noviembre de 2026">
       <p>
