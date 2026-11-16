@@ -235,7 +235,8 @@ function BookingPageInner() {
       setToast({ type: 'error', text: lang === 'es' ? 'Completa el captcha' : 'Complete the captcha' });
       return;
     }
-    if (adultos > selectedRoom.capacityAdults || ninos > selectedRoom.capacityChildren) {
+    // capacity = tope total de personas del tipo (adultos + niños) que define el hotel.
+    if (adultos > selectedRoom.capacityAdults || ninos > selectedRoom.capacityChildren || (selectedRoom.capacity && adultos + ninos > selectedRoom.capacity)) {
       setToast({ type: 'error', text: language === 'es' ? 'La ocupación excede la capacidad de esta habitación' : 'Occupancy exceeds this room capacity' });
       return;
     }
@@ -357,7 +358,7 @@ function BookingPageInner() {
                     <input type="number" min={1} max={selectedRoom.capacityAdults} value={adultos}
                       onChange={(e) => setAdultos(Math.max(1, Math.min(selectedRoom.capacityAdults, Number(e.target.value) || 1)))}
                       className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
-                    <span className="text-[9px] text-zinc-400">Máx. {selectedRoom.capacityAdults}</span>
+                    <span className="text-[9px] text-zinc-400">Máx. {selectedRoom.capacityAdults}{selectedRoom.capacity ? (language === 'es' ? ` · ${selectedRoom.capacity} personas en total` : ` · ${selectedRoom.capacity} guests total`) : ''}</span>
                   </label>
                   <label className="block">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">{language === 'es' ? 'Niños' : 'Children'}</span>
