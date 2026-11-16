@@ -13,6 +13,8 @@ import { HuespedFormFields, huespedVacio, validarHuesped, type HuespedData } fro
 import { TurnstileWidget } from '@/components/TurnstileWidget';
 import { SiteNav } from '@/components/SiteNav';
 import { SiteFooter } from '@/components/SiteFooter';
+import { GaleriaFotos } from '@/components/GaleriaFotos';
+import { Images } from 'lucide-react';
 
 // La API devuelve el error de Cloudflare (p. ej. "timeout-or-duplicate") cuando
 // el token del captcha ya se usó o caducó: hay que reiniciar el widget.
@@ -86,6 +88,7 @@ interface AvailableRoom {
   status: string;
   amenities: string[];
   image: string;
+  images?: string[];
   description: string;
   rating: number;
   capacity?: number;
@@ -125,6 +128,7 @@ function BookingPageInner() {
   const [selectedRoom, setSelectedRoom] = useState<AvailableRoom | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [activeTab, setActiveTab] = useState<BookingTab>('rooms');
+  const [galeria, setGaleria] = useState<{ fotos: string[]; titulo: string } | null>(null);
   const [bookingHero, setBookingHero] = useState('');
 
   const [huesped, setHuesped] = useState<HuespedData>(huespedVacio());
@@ -590,10 +594,20 @@ function BookingPageInner() {
                  {/* Imagen arriba — proporción consistente para que el grid quede parejo */}
                  <div className="aspect-[4/3] relative overflow-hidden">
                     <img
-                      src={room.image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1000'}
+                      src={room.image}
                       alt={room.name}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                     />
+                    {(room.images?.length ?? 0) > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setGaleria({ fotos: room.images!, titulo: room.name || room.type })}
+                        className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5"
+                      >
+                        <Images className="w-3.5 h-3.5" /> {language === 'es' ? `Ver ${room.images!.length} fotos` : `View ${room.images!.length} photos`}
+                      </button>
+                    )}
                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-primary">
                        Boutique
                     </div>
@@ -657,6 +671,7 @@ function BookingPageInner() {
          )}
       </main>
 
+      {galeria && <GaleriaFotos fotos={galeria.fotos} titulo={galeria.titulo} onClose={() => setGaleria(null)} />}
       <SiteFooter content={LANDING_CONTENT} />
 
       {confirmacion && (

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import LandingView from "@/components/LandingView";
 import { LANDING_CONTENT } from "@/content/landing";
 import { SITE_URL } from "@/lib/base-path";
+import { listarTipos } from "@/lib/contabiliClient";
+import { fotosDeTipo } from "@/lib/bookingService";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,11 @@ export const metadata: Metadata = {
 };
 
 export default async function LandingPage() {
+  // Fotos de las habitaciones desde el sistema (Hotel › Tipos). Si el sistema
+  // no responde, la portada sale igual, con el ícono en lugar de la foto.
+  const tipos = await listarTipos().catch(() => []);
+  const rooms = tipos.map((t) => ({ id: t.id, code: t.codigo, images: fotosDeTipo(t) }));
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Hotel",
@@ -47,7 +54,7 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <LandingView initialContent={LANDING_CONTENT} rooms={[]} />
+      <LandingView initialContent={LANDING_CONTENT} rooms={rooms} />
     </>
   );
 }

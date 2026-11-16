@@ -52,6 +52,9 @@ export interface TipoHabitacion {
   capacidadNinos: number;
   edadInfanteHasta: number;
   edadNinoHasta: number;
+  /** Foto principal y galería que se cargan en el app (Hotel › Tipos). */
+  imagenUrl?: string | null;
+  galeria?: string[];
 }
 
 export interface DisponibilidadTipo {
@@ -76,6 +79,8 @@ export interface DisponibilidadTipo {
   totalHabitaciones: number;
   /** Tasa de ITBMS de hospedaje (0.10 = 10%). Se cobra encima de la tarifa. */
   tasaImpuesto?: number;
+  imagenUrl?: string | null;
+  galeria?: string[];
 }
 
 export type TipoDocumento = "cedula_pa" | "pasaporte" | "otro";

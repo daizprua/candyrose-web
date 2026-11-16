@@ -138,7 +138,7 @@ export const LANDING_CONTENT: LandingContent = {
   heroSub_en: "Welcome to Hotel Candy Rose. Comfortable rooms, delicious food and oceanfront spaces to enjoy at your own pace.",
   heroSub_pt: "Bem-vindos ao Hotel Candy Rose, onde o luxo boutique encontra a brisa do Caribe.",
 
-  heroBg: "https://images.unsplash.com/photo-1544124499-58912cbddaad?q=80&w=1600&auto=format&fit=crop",
+  heroBg: withBase("/fotos/hero-muelle-rojo.webp"),
 
   aboutTitle_es: "Así es Candy Rose",
   aboutTitle_en: "This is Candy Rose",
@@ -163,7 +163,7 @@ export const LANDING_CONTENT: LandingContent = {
   about_pt:
     "No Hotel Candy Rose criamos experiências únicas. Cada canto é pensado para que você viva a brisa do Caribe panamenho em um ambiente íntimo e exclusivo. Onde o mar abraça a história, a natureza te recebe e a hospitalidade se sente como em casa.",
 
-  aboutImg: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop",
+  aboutImg: withBase("/fotos/hotel-piscina-vista.webp"),
 
   roomsTitle_es: "Nuestras Habitaciones",
   roomsTitle_en: "Our Rooms",
@@ -176,10 +176,10 @@ export const LANDING_CONTENT: LandingContent = {
   rooms: [
     {
       code: "SNL",
-      name_es: "Habitación Sencilla",
-      name_en: "Single Room",
-      description_es: "1 cama doble. Habitación de menor tamaño, en planta baja. Ideal para una estadía cómoda y práctica.",
-      description_en: "1 double bed. Smaller room on the ground floor. Ideal for a comfortable, practical stay.",
+      name_es: "Habitación Pequeña Sencilla",
+      name_en: "Small Single Room",
+      description_es: "Habitación de menor tamaño con 1 cama doble, diseñada para 1 o 2 huéspedes. Edificio principal, planta baja. A/C, TV por cable, nevera, agua caliente, wifi y esenciales de baño.",
+      description_en: "Our most compact room, with 1 double bed for 1 or 2 guests. Main building, ground floor. A/C, cable TV, fridge, hot water, wifi and bath essentials.",
       order: 1,
       group: "main",
     },
@@ -187,17 +187,17 @@ export const LANDING_CONTENT: LandingContent = {
       code: "STD",
       name_es: "Habitación Estándar",
       name_en: "Standard Room",
-      description_es: "2 camas tamaño queen. Espacio cómodo y luminoso, ideal para familias o grupos pequeños.",
-      description_en: "2 queen-size beds. Comfortable, bright space, ideal for families or small groups.",
+      description_es: "Habitación amplia con 2 camas queen. Opción versátil para parejas, amigos o familias, hasta 4 huéspedes. Edificio principal. A/C, TV por cable, nevera, agua caliente, wifi y esenciales de baño.",
+      description_en: "Spacious room with 2 queen beds. A versatile option for couples, friends or families, up to 4 guests. Main building. A/C, cable TV, fridge, hot water, wifi and bath essentials.",
       order: 2,
       group: "main",
     },
     {
       code: "DLX",
-      name_es: "Habitación Deluxe Matrimonial",
-      name_en: "Deluxe King Room",
-      description_es: "1 cama tamaño king en 3er piso, con la mejor vista y balcón. Ideal para parejas.",
-      description_en: "1 king-size bed on the 3rd floor, with the best view and balcony. Ideal for couples.",
+      name_es: "Habitación Deluxe",
+      name_en: "Deluxe Room",
+      description_es: "Habitación con 1 cama king en el tercer piso (último nivel) del edificio principal, con vista al mar. Para 2 huéspedes. A/C, TV por cable, nevera, agua caliente, wifi y esenciales de baño.",
+      description_en: "Room with 1 king bed on the third (top) floor of the main building, with sea view. For 2 guests. A/C, cable TV, fridge, hot water, wifi and bath essentials.",
       order: 3,
       group: "main",
     },
@@ -205,8 +205,8 @@ export const LANDING_CONTENT: LandingContent = {
       code: "OAS",
       name_es: "Villa Oasis",
       name_en: "Villa Oasis",
-      description_es: "2 camas tamaño queen, planta baja frente a la piscina. Dos habitaciones pueden conectarse internamente.",
-      description_en: "2 queen-size beds, ground floor facing the pool. Two rooms can connect internally.",
+      description_es: "Categoría superior con 2 camas queen, en planta baja frente a la piscina. Puede conectarse internamente con la villa contigua. Hasta 4 huéspedes. A/C, TV por cable, nevera, agua caliente, wifi y esenciales de baño.",
+      description_en: "Superior category with 2 queen beds, on the ground floor facing the pool. Can connect internally with the adjoining villa. Up to 4 guests. A/C, cable TV, fridge, hot water, wifi and bath essentials.",
       order: 4,
       group: "villa",
     },
@@ -214,8 +214,8 @@ export const LANDING_CONTENT: LandingContent = {
       code: "HRZ",
       name_es: "Villa Horizonte",
       name_en: "Villa Horizonte",
-      description_es: "2 camas tamaño queen, segundo nivel frente a la piscina, con balcón privado de vista espectacular y desayunador.",
-      description_en: "2 queen-size beds, second floor facing the pool, with a private balcony with spectacular views and a breakfast nook.",
+      description_es: "Categoría superior con 2 camas queen, en el segundo nivel frente a la piscina, con balcón privado, desayunador y vista a la piscina. Hasta 4 huéspedes. A/C, TV por cable, nevera, agua caliente, wifi y esenciales de baño.",
+      description_en: "Superior category with 2 queen beds, on the second floor facing the pool, with a private balcony, breakfast nook and pool view. Up to 4 guests. A/C, cable TV, fridge, hot water, wifi and bath essentials.",
       order: 5,
       group: "villa",
     },
@@ -357,18 +357,18 @@ export const LANDING_CONTENT: LandingContent = {
   contactEmail: "hotelcandyrose@gmail.com",
   contactLocation: "Isla Grande, Colón, Panamá",
 
-  contactBg: "https://images.unsplash.com/photo-1544124499-58912cbddaad?auto=format&fit=crop&q=80&w=1000",
+  contactBg: withBase("/fotos/muelle-playa.webp"),
 
   gallery: [
-    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1602002418082-a4443e081dd1?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop",
+    withBase("/fotos/restaurante-sobre-el-mar.webp"),
+    withBase("/fotos/piscina.webp"),
+    withBase("/fotos/muelle-terraza.webp"),
+    withBase("/fotos/cena-frente-al-mar.webp"),
+    withBase("/fotos/playa.webp"),
+    withBase("/fotos/bar-batido.webp"),
   ],
 
   logo: withBase("/logo.jpg"),
 
-  bookingHero: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1600&auto=format&fit=crop",
+  bookingHero: withBase("/fotos/villas-piscina.webp"),
 };

@@ -64,7 +64,13 @@ export interface BookingRequest {
 
 const DEFAULT_IMG = withBase("/logo.jpg");
 
+/** Foto principal + galería del tipo, sin repetidos. */
+export function fotosDeTipo(t: { imagenUrl?: string | null; galeria?: string[] | null }): string[] {
+  return Array.from(new Set([t.imagenUrl, ...(t.galeria ?? [])].filter((u): u is string => !!u)));
+}
+
 function mapDispToRoom(d: DisponibilidadTipo): AvailableRoom {
+  const fotos = fotosDeTipo(d);
   return {
     id: d.tipoId,
     number: d.codigo,
@@ -87,7 +93,8 @@ function mapDispToRoom(d: DisponibilidadTipo): AvailableRoom {
     extraInfantRate: d.cargoInfanteExtra,
     unitsAvailable: d.disponibles,
     amenities: [],
-    image: DEFAULT_IMG,
+    images: fotos,
+    image: fotos[0] ?? DEFAULT_IMG,
     description: d.descripcion,
     rating: 5,
   };
