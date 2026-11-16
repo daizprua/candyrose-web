@@ -60,6 +60,8 @@ export interface BookingRequest {
   documentoTipo: "cedula_pa" | "pasaporte" | "otro";
   documentoNumero: string;
   captchaToken: string;
+  /** Honeypot: campo oculto que un humano deja vacío. */
+  website?: string;
 }
 
 const DEFAULT_IMG = withBase("/logo.jpg");
@@ -123,7 +125,6 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
   ok: boolean;
   codigo: string;
   reservaId: string;
-  clienteId: string;
 }> {
   const res = await fetch(withBase(`/api/booking/reservar`), {
     method: "POST",
@@ -144,6 +145,7 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
       documentoNumero: b.documentoNumero,
       captchaToken: b.captchaToken,
       notas: b.notes,
+      website: b.website ?? "",
     }),
   });
   if (!res.ok) {

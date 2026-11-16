@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { listarPasadias } from "@/lib/contabiliClient";
+import { NextRequest, NextResponse } from "next/server";
+import { ipDelCliente, listarPasadias } from "@/lib/contabiliClient";
 
 /**
  * Proxy server-side para el catálogo de pasadías de Contabili.
@@ -12,9 +12,10 @@ import { listarPasadias } from "@/lib/contabiliClient";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const productos = await listarPasadias();
+    // Se reenvía la IP real (firmada) para que el backend no vea un solo cliente.
+    const productos = await listarPasadias({ ip: ipDelCliente(req.headers) });
     return NextResponse.json({ productos });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error";

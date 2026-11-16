@@ -43,7 +43,7 @@ async function crearReservaPasadiaFetch(input: PasadiaReservaInput) {
     const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
     throw new Error(err.error ?? `HTTP ${res.status}`);
   }
-  return res.json() as Promise<{ ok: boolean; codigo: string; reservaId: string; clienteId: string; total: number }>;
+  return res.json() as Promise<{ ok: boolean; codigo: string; reservaId: string }>;
 }
 import { useTranslation } from '@/i18n/useTranslation';
 import { LANDING_CONTENT } from '@/content/landing';
@@ -138,6 +138,7 @@ function BookingPageInner() {
   const [edadesNinos, setEdadesNinos] = useState<number[]>([]);
   const [captchaToken, setCaptchaToken] = useState<string>('');
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [website, setWebsite] = useState(''); // honeypot
   const [bookingRequestId, setBookingRequestId] = useState(() => crypto.randomUUID());
 
   const [submitting, setSubmitting] = useState(false);
@@ -262,6 +263,7 @@ function BookingPageInner() {
         documentoTipo: huesped.documentoTipo,
         documentoNumero: huesped.documentoNumero,
         captchaToken,
+        website,
       });
       setConfirmacion({
         titulo: language === 'en' ? 'Booking confirmed' : language === 'pt' ? 'Reserva confirmada' : 'Reserva confirmada',
@@ -395,10 +397,18 @@ function BookingPageInner() {
                   <textarea
                     value={notas}
                     onChange={(e) => setNotas(e.target.value)}
+                    maxLength={300}
                     rows={2}
                     className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary"
                   />
                 </label>
+                {/* Honeypot anti-bots: fuera de pantalla, sin foco con teclado. Un humano no lo ve ni lo llena. */}
+                <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+                  <label>
+                    Website
+                    <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                  </label>
+                </div>
                 <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} resetSignal={captchaReset} />
                 <button
                   onClick={handleSubmitBooking}
@@ -844,6 +854,7 @@ function PasadiasPanel({
   const [notas, setNotas] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [website, setWebsite] = useState(''); // honeypot
   const [submitting, setSubmitting] = useState(false);
 
   const items = productos
@@ -892,6 +903,7 @@ function PasadiasPanel({
         notas: notas || undefined,
         items: items.map((it) => ({ productoId: it.producto.id, cantidad: it.cantidad })),
         idioma: lang,
+        website,
       });
       onConfirmado({
         titulo: lang === 'es' ? 'Pasadía confirmada' : 'Day pass confirmed',
@@ -1042,7 +1054,7 @@ function PasadiasPanel({
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1">
                   {lang === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}
                 </span>
-                <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
+                <textarea value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={300} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary" />
               </label>
 
               <div className="bg-zinc-50 rounded-2xl p-4 text-sm">
@@ -1069,6 +1081,13 @@ function PasadiasPanel({
                 </div>
               </div>
 
+              {/* Honeypot anti-bots: fuera de pantalla, sin foco con teclado. Un humano no lo ve ni lo llena. */}
+              <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+                <label>
+                  Website
+                  <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </label>
+              </div>
               <TurnstileWidget onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} resetSignal={captchaReset} />
 
               <button
