@@ -12,15 +12,11 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* El sitio no tiene tema oscuro: si el sistema está en modo oscuro, el fondo
+     del body (zonas de overscroll, pantalla "Cargando…") salía negro. */
+  --background: #FCFBF7;
+  --foreground: #3E2723;
+  color-scheme: light;
 }
 
 body {

@@ -87,7 +87,7 @@ export function HuespedFormFields({
   const setNumeroLocal = (num: string) => set('telefono', componer(prefijo, num));
 
   const labelClass = "text-[10px] font-black uppercase tracking-widest text-zinc-500 block mb-1";
-  const inputClass = "w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary";
+  const inputClass = "w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary";
 
   return (
     <>
@@ -158,8 +158,8 @@ export function HuespedFormFields({
         </select>
       </label>
 
-      <div className="grid grid-cols-3 gap-2">
-        <label className="block col-span-1">
+      <div className="grid grid-cols-5 gap-2">
+        <label className="block col-span-2">
           <span className={labelClass}>{language === 'es' ? 'Tipo de ID' : 'ID type'}</span>
           <select
             required
@@ -172,7 +172,7 @@ export function HuespedFormFields({
             <option value="otro">{language === 'es' ? 'Otro ID' : 'Other ID'}</option>
           </select>
         </label>
-        <label className="block col-span-2">
+        <label className="block col-span-3">
           <span className={labelClass}>{language === 'es' ? 'Número de documento' : 'Document number'}</span>
           <input
             type="text"

@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Calendar, User, Search, ChevronRight, Zap, Coffee, Wind, Wifi, Star, X, CheckCircle2 } from 'lucide-react';
+import { Calendar, User, Search, ChevronRight, Zap, Coffee, Wind, Wifi, Star, X, CheckCircle2, Minus, Plus } from 'lucide-react';
 import {
   Clock, LogIn, LogOut, CreditCard, Ship, Dumbbell,
   ShieldCheck, XCircle, Utensils, Waves,
@@ -271,6 +271,8 @@ function BookingPageInner() {
   const nights = Math.ceil(
     (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
   );
+  // "1 noche" / "2 noches" según la cantidad.
+  const nochesLabel = (n: number) => `${n} ${n === 1 ? t('booking.night') : t('booking.nights')}`;
   const ocupacionCotizada = (() => {
     if (!selectedRoom) return { recargoNoche: 0, subtotal: 0, impuesto: 0, total: 0 };
     const adultosExtra = Math.max(0, adultos - selectedRoom.adultsIncluded);
@@ -302,14 +304,14 @@ function BookingPageInner() {
       {showCheckoutForm && selectedRoom && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300 overflow-y-auto">
           <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl relative my-auto">
-             <button onClick={() => setShowCheckoutForm(false)} className="absolute top-5 right-5 text-zinc-400 hover:text-dark transition-colors" aria-label="Cerrar">
+             <button onClick={() => setShowCheckoutForm(false)} className="absolute top-5 right-5 text-zinc-400 hover:text-dark transition-colors" aria-label={language === 'en' ? 'Close' : 'Cerrar'}>
                <X className="w-5 h-5" />
              </button>
-             <h2 className="text-2xl font-black mb-5">{t('booking.checkout')}</h2>
+             <h2 className="text-2xl font-black mb-5 pr-8">{t('booking.checkout')}</h2>
              <div className="bg-zinc-50 p-5 rounded-2xl mb-5 border border-zinc-100">
                 <p className="font-black text-base text-dark">{selectedRoom.name || selectedRoom.type}</p>
                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 mt-1 uppercase tracking-widest">
-                   <Calendar className="w-3 h-3" /> {checkInDate} - {checkOutDate} ({nights} {t('booking.nights')})
+                   <Calendar className="w-3 h-3" /> {checkInDate} - {checkOutDate} ({nochesLabel(nights)})
                 </div>
                 <div className="mt-3 space-y-0.5 text-xs font-bold text-zinc-500">
                   <div className="flex justify-between"><span>Subtotal</span><span>${ocupacionCotizada.subtotal.toFixed(2)}</span></div>
@@ -395,13 +397,13 @@ function BookingPageInner() {
                alt="Booking Background" 
                className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#FDFCFB]"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-[#FDFCFB]"></div>
          </div>
-         <div className="relative z-10 text-center text-white px-6">
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-4 drop-shadow-2xl">
+         <div className="relative z-10 text-center text-white px-6 -mt-10">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-[1.05] mb-4 drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)] max-w-5xl mx-auto">
                {language === 'es' ? 'Reserva tu lugar en el paraíso' : 'Book your spot in paradise'}
             </h1>
-            <p className="text-lg md:text-xl font-medium opacity-90 max-w-2xl mx-auto drop-shadow-md">
+            <p className="text-base md:text-xl font-medium max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
                {language === 'es' ? 'Momentos inolvidables te esperan en Hotel Candy Rose' : 'Unforgettable moments await at Hotel Candy Rose'}
             </p>
          </div>
@@ -442,7 +444,7 @@ function BookingPageInner() {
                <input type="number" min="1" value={guests} onChange={e => setGuests(parseInt(e.target.value))} className="w-full bg-transparent text-sm font-black outline-none border-b border-zinc-100 pb-2 focus:border-primary transition-colors" />
             </div>
             <div className="p-2">
-               <button className="w-full bg-primary hover:bg-orange-600 text-white font-black py-4 rounded-3xl shadow-lg transition-all uppercase tracking-widest text-[10px]">
+               <button className="w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-3xl shadow-lg transition-all uppercase tracking-widest text-[10px]">
                   {language === 'es' ? 'Actualizar Búsqueda' : 'Update Search'}
                </button>
             </div>
@@ -451,35 +453,35 @@ function BookingPageInner() {
 
       <main className="container mx-auto px-6 pt-20 pb-20">
          {/* Tabs Navigation — 5 pestañas: 2 reservables + 3 informativas */}
-         <div className="flex justify-center mb-16">
-            <div className="bg-zinc-100 p-1.5 rounded-[2rem] flex flex-wrap gap-1 sm:gap-2 max-w-full">
+         <div className="flex justify-start sm:justify-center mb-12 sm:mb-16 -mx-6 px-6 overflow-x-auto [scrollbar-width:none]">
+            <div className="bg-zinc-100 p-1.5 rounded-full flex flex-nowrap gap-1 sm:gap-2 shrink-0">
                <button
                   onClick={() => setActiveTab('rooms')}
-                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'rooms' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === 'rooms' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Habitaciones' : 'Rooms'}
                </button>
                <button
                   onClick={() => setActiveTab('pasadias')}
-                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'pasadias' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === 'pasadias' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Pasadías' : 'Day Passes'}
                </button>
                <button
                   onClick={() => setActiveTab('estadia')}
-                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'estadia' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === 'estadia' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Información' : 'Info'}
                </button>
                <button
                   onClick={() => setActiveTab('llegar')}
-                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'llegar' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === 'llegar' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Cómo llegar' : 'How to arrive'}
                </button>
                <button
                   onClick={() => setActiveTab('politicas')}
-                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'politicas' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 sm:px-6 lg:px-10 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${activeTab === 'politicas' ? 'bg-white text-dark shadow-sm' : 'text-zinc-400 hover:text-zinc-600'}`}
                >
                   {language === 'es' ? 'Políticas' : 'Policies'}
                </button>
@@ -533,9 +535,13 @@ function BookingPageInner() {
                   }
                   return (
                      <>
-                        <span className="text-5xl block mb-6">🏝️</span>
+                        <span className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-6">
+                           <Waves className="w-7 h-7" />
+                        </span>
                         <h3 className="text-2xl font-black mb-2">{t('booking.noRoomsAvailable')}</h3>
-                        <p className="text-zinc-400 font-medium">Intenta con otras fechas o ajusta los huéspedes.</p>
+                        <p className="text-zinc-400 font-medium">
+                           {language === 'en' ? 'Try other dates or adjust the number of guests.' : 'Intenta con otras fechas o ajusta los huéspedes.'}
+                        </p>
                      </>
                   );
                })()}
@@ -605,7 +611,7 @@ function BookingPageInner() {
                        <div className="flex items-end justify-between gap-3 mb-3">
                           <div>
                              <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                                {room.nights} {t('booking.nights')}
+                                {nochesLabel(room.nights)}
                              </p>
                              <div className="flex items-baseline gap-1.5">
                                 {room.baseRate && room.appliedRatePlan && room.baseRate > room.pricePerNight && (
@@ -927,16 +933,16 @@ function PasadiasPanel({
                     type="button"
                     onClick={() => setCantidad(p.id, -1)}
                     disabled={cantidad === 0}
-                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed font-bold"
-                    aria-label="Restar"
-                  >−</button>
+                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                    aria-label={lang === 'es' ? 'Restar' : 'Decrease'}
+                  ><Minus className="w-4 h-4" /></button>
                   <span className="w-6 text-center font-bold">{cantidad}</span>
                   <button
                     type="button"
                     onClick={() => setCantidad(p.id, 1)}
-                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary font-bold"
-                    aria-label="Sumar"
-                  >+</button>
+                    className="w-9 h-9 rounded-full border border-zinc-200 hover:border-primary hover:text-primary flex items-center justify-center transition-colors"
+                    aria-label={lang === 'es' ? 'Sumar' : 'Increase'}
+                  ><Plus className="w-4 h-4" /></button>
                 </div>
               </div>
             </div>

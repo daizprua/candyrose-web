@@ -20,11 +20,12 @@ import {
   Plus, Trash2, Edit3, Save, Check, AlertCircle,
   ArrowRight, ArrowLeft, Image as LucideImage,
   Upload, Sparkles, Send,
-  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor
+  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor, Mail,
+  Instagram as LucideInstagram
 } from 'lucide-react';
 
 // Re-export with alias for commonly missing or renamed icons
-export const Instagram = Camera; // Instagram is missing in 1.8.0
+export const Instagram = LucideInstagram; // existe en lucide-react 0.451 (la versión instalada)
 export const Map = MapPin;        // Map is sometimes missing or renamed
 export const PawPrint = AlertCircle; // PawPrint may not exist in older lucide; fallback safe
 
@@ -41,7 +42,7 @@ export {
   Plus, Trash2, Edit3, Save, Check, AlertCircle,
   ArrowRight, ArrowLeft, LucideImage as Image,
   Upload, Sparkles, Send,
-  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor
+  Clock, CreditCard, Ship, Dumbbell, XCircle, Anchor, Mail
 };
 
 /**

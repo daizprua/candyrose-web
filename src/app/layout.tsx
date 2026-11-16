@@ -16,7 +16,15 @@ const pacifico = Pacifico({
 
 export const metadata: Metadata = {
   title: "Hotel Candy Rose",
-  description: "Boutique Hotel in Panama",
+  description: "Hotel boutique en Isla Grande, Colón, Panamá.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 // Sin esto el navegador adivina la codificación y los acentos y la ñ salen como

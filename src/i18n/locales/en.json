@@ -40,6 +40,7 @@
     "checkIn": "Check-in Date",
     "checkOut": "Check-out Date",
     "guests": "Guests",
+    "night": "night",
     "nights": "nights",
     "pricePerNight": "per night",
     "totalPrice": "Total Price",
