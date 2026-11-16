@@ -8,6 +8,7 @@
  */
 
 import type { DisponibilidadTipo } from "./contabiliClient";
+import { withBase } from "@/lib/base-path";
 
 export interface AvailableRoom {
   id: string;
@@ -61,7 +62,7 @@ export interface BookingRequest {
   captchaToken: string;
 }
 
-const DEFAULT_IMG = "/logo.jpg";
+const DEFAULT_IMG = withBase("/logo.jpg");
 
 function mapDispToRoom(d: DisponibilidadTipo): AvailableRoom {
   return {
@@ -102,7 +103,7 @@ export async function getAvailableRooms(
     checkOut: checkOutDate,
     huespedes: String(guests),
   }).toString();
-  const res = await fetch(`/api/booking/disponibilidad?${qs}`, { cache: "no-store" });
+  const res = await fetch(withBase(`/api/booking/disponibilidad?${qs}`), { cache: "no-store" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Error desconocido" }));
     throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -117,7 +118,7 @@ export async function createGuestReservation(b: BookingRequest): Promise<{
   reservaId: string;
   clienteId: string;
 }> {
-  const res = await fetch(`/api/booking/reservar`, {
+  const res = await fetch(withBase(`/api/booking/reservar`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

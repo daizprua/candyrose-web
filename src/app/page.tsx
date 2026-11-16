@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LandingView from "@/components/LandingView";
 import { LANDING_CONTENT } from "@/content/landing";
+import { SITE_URL } from "@/lib/base-path";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     images: [LANDING_CONTENT.gallery[0]],
   },
   alternates: {
-    canonical: "https://hotelcandyrose.com",
+    canonical: SITE_URL,
   },
 };
 
@@ -32,7 +33,7 @@ export default async function LandingPage() {
     },
     priceRange: "$$",
     telephone: LANDING_CONTENT.contactPhone,
-    url: "https://hotelcandyrose.com",
+    url: SITE_URL,
     amenityFeature: [
       { "@type": "LocationFeatureSpecification", name: "Piscina", value: true },
       { "@type": "LocationFeatureSpecification", name: "Playa", value: true },

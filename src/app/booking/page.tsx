@@ -15,7 +15,7 @@ import { TurnstileWidget } from '@/components/TurnstileWidget';
 // Wrappers que pasan por los route handlers locales (/api/booking/*) en vez
 // de hablar directo con Contabili. El token vive solo en el servidor.
 async function listarPasadiasFetch(): Promise<PasadiaProducto[]> {
-  const res = await fetch('/api/booking/pasadias-catalogo', { cache: 'no-store' });
+  const res = await fetch(withBase('/api/booking/pasadias-catalogo'), { cache: 'no-store' });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
     throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -24,7 +24,7 @@ async function listarPasadiasFetch(): Promise<PasadiaProducto[]> {
   return data.productos ?? [];
 }
 async function crearReservaPasadiaFetch(input: PasadiaReservaInput) {
-  const res = await fetch('/api/booking/pasadias-reservar', {
+  const res = await fetch(withBase('/api/booking/pasadias-reservar'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -37,6 +37,7 @@ async function crearReservaPasadiaFetch(input: PasadiaReservaInput) {
 }
 import { useTranslation } from '@/i18n/useTranslation';
 import { LANDING_CONTENT } from '@/content/landing';
+import { withBase } from "@/lib/base-path";
 
 type BookingTab = 'rooms' | 'pasadias' | 'estadia' | 'llegar' | 'politicas';
 

@@ -5,7 +5,7 @@
  * (sin login) pero protegido por un token compartido en cada request.
  */
 
-const API_URL = process.env.CONTABILI_API_URL ?? "https://hotelcandyrose.contabili.app";
+const API_URL = process.env.CONTABILI_API_URL ?? "https://hotelcandyrose.devstack.agency/app";
 const TOKEN = process.env.PUBLIC_BOOKING_TOKEN ?? "";
 
 if (!TOKEN && typeof window === "undefined") {

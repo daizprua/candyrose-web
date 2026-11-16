@@ -1,3 +1,4 @@
+import { withBase } from "@/lib/base-path";
 /**
  * Contenido editable del landing y motor de reservas.
  *
@@ -367,7 +368,7 @@ export const LANDING_CONTENT: LandingContent = {
     "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop",
   ],
 
-  logo: "/logo.jpg",
+  logo: withBase("/logo.jpg"),
 
   bookingHero: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1600&auto=format&fit=crop",
 };

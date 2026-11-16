@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Pacifico } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/i18n/context";
+import { withBase } from "@/lib/base-path";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,11 +20,11 @@ export const metadata: Metadata = {
   description: "Hotel boutique en Isla Grande, Colón, Panamá.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: withBase("/favicon.ico"), sizes: "any" },
+      { url: withBase("/favicon-32.png"), type: "image/png", sizes: "32x32" },
+      { url: withBase("/icon-192.png"), type: "image/png", sizes: "192x192" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: withBase("/apple-touch-icon.png"),
   },
 };
 
